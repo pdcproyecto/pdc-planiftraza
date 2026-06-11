@@ -1,0 +1,1118 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Packing del Carmen — Trazabilidad</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    :root {
+      --primary:#1a73e8; --primary-dark:#1557b0;
+      --sidebar-bg:#1e2a3b; --sidebar-hover:#2d3f57;
+      --content-bg:#f0f2f5; --border:#e0e0e0;
+      --text:#202124; --text-muted:#5f6368;
+      --cerrado-bg:#e6f4ea; --cerrado-text:#137333; --cerrado-border:#ceead6;
+      --pendiente-bg:#fef7e0; --pendiente-text:#a87e00; --pendiente-border:#fce8b2;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Inter',sans-serif;background:var(--content-bg);color:var(--text);height:100vh;overflow:hidden}
+
+    /* LOGIN */
+    #login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#1e2a3b 0%,#1a73e8 100%)}
+    .login-card{background:#fff;border-radius:16px;padding:48px;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+    .login-logo{text-align:center;margin-bottom:32px}
+    .login-logo h1{font-size:20px;font-weight:700;color:#1e2a3b}
+    .login-logo p{font-size:13px;color:var(--text-muted);margin-top:4px}
+    .form-group{margin-bottom:18px}
+    .form-group label{display:block;font-size:12px;font-weight:500;color:var(--text-muted);margin-bottom:5px}
+    .form-group input,.form-group select{width:100%;padding:10px 13px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:'Inter',sans-serif;outline:none;transition:border-color .2s}
+    .form-group input:focus,.form-group select:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(26,115,232,.1)}
+    .btn-primary{width:100%;padding:12px;background:var(--primary);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:background .2s}
+    .btn-primary:hover{background:var(--primary-dark)}
+    .login-error{color:#d93025;font-size:13px;margin-top:12px;text-align:center;display:none}
+
+    /* APP */
+    #app-screen{display:flex;height:100vh}
+
+    /* SIDEBAR */
+    #sidebar{width:245px;background:var(--sidebar-bg);color:#fff;display:flex;flex-direction:column;flex-shrink:0}
+    .sidebar-header{padding:18px 16px;border-bottom:1px solid rgba(255,255,255,.08)}
+    .sidebar-brand{font-size:14px;font-weight:700}
+    .sidebar-brand span{display:block;font-size:11px;font-weight:400;color:rgba(255,255,255,.45);margin-top:2px}
+    .sidebar-user{padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:10px}
+    .user-avatar{width:32px;height:32px;background:var(--primary);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0}
+    .user-info .name{font-size:13px;font-weight:500}
+    .user-info .role{font-size:11px;color:rgba(255,255,255,.45);text-transform:capitalize}
+    .sidebar-nav{flex:1;padding:6px 0;overflow-y:auto}
+    .nav-item{display:flex;align-items:center;gap:10px;padding:10px 16px;cursor:pointer;font-size:13px;color:rgba(255,255,255,.7);transition:background .15s}
+    .nav-item:hover{background:var(--sidebar-hover);color:#fff}
+    .nav-item i.icon{width:16px;text-align:center;font-size:13px}
+    .nav-item .arrow{margin-left:auto;font-size:10px;transition:transform .2s}
+    .nav-item.expanded .arrow{transform:rotate(90deg)}
+    .nav-submenu{display:none;background:rgba(0,0,0,.15)}
+    .nav-submenu.open{display:block}
+    .nav-subitem{display:flex;align-items:center;gap:8px;padding:8px 16px 8px 40px;cursor:pointer;font-size:12px;color:rgba(255,255,255,.55);transition:background .15s}
+    .nav-subitem::before{content:'';width:4px;height:4px;border-radius:50%;background:currentColor;flex-shrink:0}
+    .nav-subitem:hover{background:rgba(255,255,255,.05);color:rgba(255,255,255,.9)}
+    .nav-subitem.active{color:#90c2ff}
+    .sidebar-footer{padding:12px 16px;border-top:1px solid rgba(255,255,255,.08)}
+    .btn-logout{display:flex;align-items:center;gap:8px;font-size:12px;color:rgba(255,255,255,.45);cursor:pointer;background:none;border:none;font-family:'Inter',sans-serif;transition:color .2s}
+    .btn-logout:hover{color:#fff}
+
+    /* MAIN */
+    #main-content{flex:1;overflow-y:auto;display:flex;flex-direction:column;min-width:0}
+    .content-header{background:#fff;padding:14px 24px;border-bottom:1px solid var(--border);flex-shrink:0}
+    .breadcrumb{font-size:13px;color:var(--text-muted);display:flex;align-items:center;gap:6px}
+    .breadcrumb .current{color:var(--text);font-weight:600}
+    .breadcrumb i{font-size:9px}
+    .content-body{padding:22px 24px;flex:1}
+
+    /* STATS */
+    .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+    .stat-card{background:#fff;border-radius:10px;padding:18px;box-shadow:0 1px 3px rgba(0,0,0,.07);display:flex;align-items:center;gap:14px}
+    .stat-icon{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+    .stat-icon.blue{background:#e8f0fe;color:#1a73e8}
+    .stat-icon.green{background:#e6f4ea;color:#137333}
+    .stat-icon.yellow{background:#fef7e0;color:#a87e00}
+    .stat-icon.purple{background:#f3e8fd;color:#8430ce}
+    .stat-value{font-size:24px;font-weight:700;line-height:1}
+    .stat-label{font-size:11px;color:var(--text-muted);margin-top:3px}
+
+    /* TABLE SECTION */
+    .table-section{background:#fff;border-radius:10px;box-shadow:0 1px 3px rgba(0,0,0,.07);overflow:hidden}
+    .table-toolbar{padding:14px 18px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+    .table-title{font-size:14px;font-weight:700;letter-spacing:.3px;margin-right:auto}
+    .filter-group{display:flex;align-items:center;gap:6px}
+    .filter-group label{font-size:12px;color:var(--text-muted);white-space:nowrap}
+    .f-input{padding:6px 9px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-family:'Inter',sans-serif;outline:none}
+    .f-input:focus{border-color:var(--primary)}
+    .btn-add{display:flex;align-items:center;gap:5px;padding:7px 13px;background:var(--primary);color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;white-space:nowrap;transition:background .2s}
+    .btn-add:hover{background:var(--primary-dark)}
+    .table-wrapper{overflow-x:auto;position:relative}
+
+    /* TABLE */
+    table{width:100%;border-collapse:collapse;font-size:12px}
+    thead th{background:#f8f9fa;padding:10px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-muted);border-bottom:1px solid var(--border);white-space:nowrap}
+    tbody tr{border-bottom:1px solid #f2f2f2;transition:background .1s}
+    tbody tr:hover{background:#fafafa}
+    tbody tr:last-child{border-bottom:none}
+    tbody td{padding:9px 12px;white-space:nowrap}
+    .cell-cliente{font-weight:600}
+
+    /* CHIPS */
+    .chip{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:700;border:1px solid;cursor:pointer;transition:all .15s;user-select:none;white-space:nowrap}
+    .chip.cerrado{background:var(--cerrado-bg);color:var(--cerrado-text);border-color:var(--cerrado-border)}
+    .chip.pendiente{background:var(--pendiente-bg);color:var(--pendiente-text);border-color:var(--pendiente-border)}
+    .chip.auto{cursor:default}
+    .chip:not(.auto):hover{opacity:.75;transform:scale(.97)}
+    .time-input{padding:4px 7px;border:1px solid var(--border);border-radius:5px;font-size:12px;font-family:'Inter',sans-serif;width:78px;outline:none}
+    .time-input:focus{border-color:var(--primary)}
+    .tiempo-val{font-size:12px;color:var(--text-muted);font-weight:500}
+    .actions-cell{display:flex;gap:3px}
+    .btn-icon{width:26px;height:26px;display:flex;align-items:center;justify-content:center;border:none;border-radius:5px;cursor:pointer;font-size:11px;background:transparent;transition:background .15s}
+    .btn-icon.edit{color:#1a73e8}.btn-icon.del{color:#d93025}
+    .btn-icon:hover{background:#f0f0f0}
+    .empty-state{text-align:center;padding:48px 24px;color:var(--text-muted)}
+    .empty-state i{font-size:36px;color:#dadce0;display:block;margin-bottom:10px}
+    .empty-state p{font-size:13px}
+
+    /* LOADING */
+    .loading-overlay{display:none;position:absolute;inset:0;background:rgba(255,255,255,.75);z-index:10;align-items:center;justify-content:center}
+    .loading-overlay.show{display:flex}
+    .spinner{width:32px;height:32px;border:3px solid #f0f0f0;border-top-color:var(--primary);border-radius:50%;animation:spin .7s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    /* MODAL */
+    .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100;align-items:center;justify-content:center}
+    .modal-overlay.open{display:flex}
+    .modal{background:#fff;border-radius:12px;width:540px;max-width:95vw;box-shadow:0 20px 60px rgba(0,0,0,.25);overflow:hidden}
+    .modal-header{padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+    .modal-title{font-size:15px;font-weight:700}
+    .modal-close{width:26px;height:26px;display:flex;align-items:center;justify-content:center;border:none;background:#f0f0f0;border-radius:5px;cursor:pointer;font-size:13px;color:var(--text-muted)}
+    .modal-close:hover{background:#e0e0e0}
+    .modal-body{padding:22px}
+    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    .form-grid .full{grid-column:1/-1}
+    .modal-footer{padding:14px 22px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px}
+    .btn-cancel{padding:8px 16px;background:#f0f0f0;color:var(--text);border:none;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;font-family:'Inter',sans-serif}
+    .btn-cancel:hover{background:#e0e0e0}
+    .btn-save{padding:8px 16px;background:var(--primary);color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;font-family:'Inter',sans-serif}
+    .btn-save:hover{background:var(--primary-dark)}
+
+    /* TOAST */
+    #toast-container{position:fixed;bottom:20px;right:20px;z-index:200;display:flex;flex-direction:column;gap:7px}
+    .toast{padding:11px 16px;border-radius:8px;font-size:12px;font-weight:500;color:#fff;box-shadow:0 4px 12px rgba(0,0,0,.2);animation:slideIn .2s ease}
+    .toast.success{background:#1e7e34}.toast.error{background:#c62828}.toast.info{background:#1a73e8}
+    @keyframes slideIn{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:translateX(0)}}
+
+    /* COMING SOON */
+    .coming-soon{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 24px;color:var(--text-muted);text-align:center}
+    .coming-soon i{font-size:44px;color:#dadce0;margin-bottom:14px}
+    .coming-soon h3{font-size:17px;color:var(--text);margin-bottom:7px}
+    .coming-soon p{font-size:13px}
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">
+      <h1>🌿 Packing del Carmen</h1>
+      <p>Sistema de Trazabilidad y Planificación</p>
+    </div>
+    <div class="form-group">
+      <label>Usuario</label>
+      <input type="text" id="login-username" placeholder="Nombre de usuario" autocomplete="username">
+    </div>
+    <div class="form-group">
+      <label>Contraseña</label>
+      <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <button class="btn-primary" onclick="Auth.login()">
+      <span id="login-btn-text">Ingresar</span>
+    </button>
+    <div class="login-error" id="login-error"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app-screen" style="display:none">
+  <aside id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-brand">Packing del Carmen<span>Trazabilidad &amp; Planificación</span></div>
+    </div>
+    <div class="sidebar-user">
+      <div class="user-avatar" id="user-avatar">A</div>
+      <div class="user-info">
+        <div class="name" id="user-name">—</div>
+        <div class="role" id="user-role">—</div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-item" onclick="Nav.toggle('reportes')" id="nav-reportes">
+        <i class="fa-solid fa-chart-bar icon"></i><span>Reportes</span>
+        <i class="fa-solid fa-chevron-right arrow"></i>
+      </div>
+      <div class="nav-submenu" id="submenu-reportes">
+        <div class="nav-subitem" id="sub-reporte-tiempos" onclick="Nav.go('reporte-tiempos')">Reporte de Tiempos de Envío</div>
+        <div class="nav-subitem" id="sub-balance-masas"   onclick="Nav.go('balance-masas')">Balance de Masas</div>
+      </div>
+      <div class="nav-item" onclick="Nav.toggle('trazabilidad')" id="nav-trazabilidad">
+        <i class="fa-solid fa-route icon"></i><span>Trazabilidad</span>
+        <i class="fa-solid fa-chevron-right arrow"></i>
+      </div>
+      <div class="nav-submenu" id="submenu-trazabilidad">
+        <div class="nav-subitem" id="sub-plan-procesos"    onclick="Nav.go('plan-procesos')">Plan de Procesos</div>
+        <div class="nav-subitem" id="sub-programa-empaque" onclick="Nav.go('programa-empaque')">Programa de Empaque</div>
+      </div>
+      <div class="nav-item" onclick="Nav.toggle('planificacion')" id="nav-planificacion">
+        <i class="fa-solid fa-calendar-days icon"></i><span>Planificación</span>
+        <i class="fa-solid fa-chevron-right arrow"></i>
+      </div>
+      <div class="nav-submenu" id="submenu-planificacion">
+        <div class="nav-subitem" id="sub-mrp-materiales" onclick="Nav.go('mrp-materiales')">MRP de Materiales</div>
+      </div>
+
+      <!-- ADMIN solo para admin -->
+      <div id="nav-admin-section" style="display:none">
+        <div style="height:1px;background:rgba(255,255,255,.08);margin:6px 0"></div>
+        <div class="nav-item" onclick="Nav.toggle('admin')" id="nav-admin">
+          <i class="fa-solid fa-gear icon"></i><span>Administración</span>
+          <i class="fa-solid fa-chevron-right arrow"></i>
+        </div>
+        <div class="nav-submenu" id="submenu-admin">
+          <div class="nav-subitem" id="sub-admin-usuarios" onclick="Nav.go('admin-usuarios')">Usuarios</div>
+          <div class="nav-subitem" id="sub-admin-listas"   onclick="Nav.go('admin-listas')">Clientes y Cultivos</div>
+        </div>
+      </div>
+
+    </nav>
+    <div class="sidebar-footer">
+      <button class="btn-logout" onclick="Auth.logout()">
+        <i class="fa-solid fa-right-from-bracket"></i> Cerrar sesión
+      </button>
+    </div>
+  </aside>
+
+  <main id="main-content">
+    <!-- REPORTE DE TIEMPOS -->
+    <div id="view-reporte-tiempos" style="display:none">
+      <div class="content-header">
+        <div class="breadcrumb">
+          <span>Reportes</span><i class="fa-solid fa-chevron-right"></i>
+          <span class="current">Reporte de Tiempos de Envío</span>
+        </div>
+      </div>
+      <div class="content-body">
+        <div class="stats-grid">
+          <div class="stat-card"><div class="stat-icon blue"><i class="fa-solid fa-list"></i></div>
+            <div><div class="stat-value" id="s-total">—</div><div class="stat-label">Total Registros</div></div></div>
+          <div class="stat-card"><div class="stat-icon green"><i class="fa-solid fa-circle-check"></i></div>
+            <div><div class="stat-value" id="s-cerrado">—</div><div class="stat-label">Reportes Cerrados</div></div></div>
+          <div class="stat-card"><div class="stat-icon yellow"><i class="fa-solid fa-clock"></i></div>
+            <div><div class="stat-value" id="s-pendiente">—</div><div class="stat-label">Pendientes</div></div></div>
+          <div class="stat-card"><div class="stat-icon purple"><i class="fa-solid fa-stopwatch"></i></div>
+            <div><div class="stat-value" id="s-avg">—</div><div class="stat-label">Tiempo Promedio</div></div></div>
+        </div>
+        <div class="table-section">
+          <div class="table-toolbar">
+            <span class="table-title">STATUS DE REPORTES</span>
+            <div class="filter-group">
+              <label>Fecha:</label>
+              <input type="date" class="f-input" id="f-fecha" onchange="RT.filter()">
+            </div>
+            <div class="filter-group">
+              <label>Cliente:</label>
+              <select class="f-input" id="f-cliente" onchange="RT.filter()">
+                <option value="">Todos</option>
+              </select>
+            </div>
+            <button class="btn-add" onclick="RT.openModal()"><i class="fa-solid fa-plus"></i> Agregar</button>
+          </div>
+          <div class="table-wrapper">
+            <div class="loading-overlay" id="rt-loading"><div class="spinner"></div></div>
+            <table>
+              <thead><tr>
+                <th>Cliente</th><th>Cultivo</th><th>Fecha</th>
+                <th>Proceso</th><th>Trazabilidad</th><th>Validación</th><th>Reporte</th>
+                <th>Hora Fin Proceso</th><th>Hora Envío Reporte</th><th>Tiempo Transcurrido</th>
+                <th></th>
+              </tr></thead>
+              <tbody id="rt-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PLACEHOLDER -->
+    <div id="view-placeholder" style="display:none">
+      <div class="content-header">
+        <div class="breadcrumb">
+          <span id="ph-parent">—</span><i class="fa-solid fa-chevron-right"></i>
+          <span class="current" id="ph-current">—</span>
+        </div>
+      </div>
+      <div class="content-body">
+        <div class="coming-soon">
+          <i class="fa-solid fa-hammer"></i>
+          <h3>En Desarrollo</h3>
+          <p>Este módulo estará disponible próximamente.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEW: ADMIN USUARIOS -->
+    <div id="view-admin-usuarios" style="display:none">
+      <div class="content-header">
+        <div class="breadcrumb">
+          <span>Administración</span><i class="fa-solid fa-chevron-right"></i>
+          <span class="current">Usuarios</span>
+        </div>
+      </div>
+      <div class="content-body">
+        <div class="table-section">
+          <div class="table-toolbar">
+            <span class="table-title">GESTIÓN DE USUARIOS</span>
+            <button class="btn-add" onclick="AdminUsuarios.openModal()"><i class="fa-solid fa-plus"></i> Nuevo Usuario</button>
+          </div>
+          <div class="table-wrapper">
+            <div class="loading-overlay" id="au-loading"><div class="spinner"></div></div>
+            <table>
+              <thead><tr>
+                <th>Nombre</th><th>Usuario</th><th>Email</th><th>Rol</th><th>Estado</th><th>Último Acceso</th><th></th>
+              </tr></thead>
+              <tbody id="au-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEW: ADMIN LISTAS -->
+    <div id="view-admin-listas" style="display:none">
+      <div class="content-header">
+        <div class="breadcrumb">
+          <span>Administración</span><i class="fa-solid fa-chevron-right"></i>
+          <span class="current">Clientes y Cultivos</span>
+        </div>
+      </div>
+      <div class="content-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+
+          <!-- CLIENTES -->
+          <div class="table-section">
+            <div class="table-toolbar">
+              <span class="table-title">CLIENTES</span>
+              <button class="btn-add" onclick="AdminListas.openModal('CLIENTE')"><i class="fa-solid fa-plus"></i> Agregar</button>
+            </div>
+            <table>
+              <thead><tr><th>#</th><th>Nombre</th><th>Estado</th><th></th></tr></thead>
+              <tbody id="al-clientes-tbody"></tbody>
+            </table>
+          </div>
+
+          <!-- CULTIVOS -->
+          <div class="table-section">
+            <div class="table-toolbar">
+              <span class="table-title">CULTIVOS</span>
+              <button class="btn-add" onclick="AdminListas.openModal('CULTIVO')"><i class="fa-solid fa-plus"></i> Agregar</button>
+            </div>
+            <table>
+              <thead><tr><th>#</th><th>Nombre</th><th>Estado</th><th></th></tr></thead>
+              <tbody id="al-cultivos-tbody"></tbody>
+            </table>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-title">Agregar Registro</span>
+      <button class="modal-close" onclick="RT.closeModal()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Cliente *</label>
+          <select id="m-cliente" class="f-input" style="width:100%"><option value="">Cargando...</option></select>
+        </div>
+        <div class="form-group">
+          <label>Cultivo *</label>
+          <select id="m-cultivo" class="f-input" style="width:100%"><option value="">Cargando...</option></select>
+        </div>
+        <div class="form-group">
+          <label>Fecha de Proceso *</label>
+          <input type="date" id="m-fecha" class="f-input" style="width:100%">
+        </div>
+        <div class="form-group">
+          <label>Hora Fin de Proceso</label>
+          <input type="time" id="m-hora-fin" class="f-input" style="width:100%">
+        </div>
+        <div class="form-group">
+          <label>Hora Envío Reporte</label>
+          <input type="time" id="m-hora-envio" class="f-input" style="width:100%">
+        </div>
+        <div class="form-group">
+          <label>Trazabilidad</label>
+          <select id="m-trazabilidad" class="f-input" style="width:100%">
+            <option value="PENDIENTE">PENDIENTE</option>
+            <option value="CERRADO">CERRADO</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Validación</label>
+          <select id="m-validacion" class="f-input" style="width:100%">
+            <option value="PENDIENTE">PENDIENTE</option>
+            <option value="CERRADO">CERRADO</option>
+          </select>
+        </div>
+        <div class="form-group full">
+          <label>Observaciones</label>
+          <input type="text" id="m-obs" class="f-input" style="width:100%" placeholder="Opcional...">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="RT.closeModal()">Cancelar</button>
+      <button class="btn-save" onclick="RT.save()"><span id="save-text">Guardar</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL USUARIO -->
+<div class="modal-overlay" id="modal-usuario">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="mu-title">Nuevo Usuario</span>
+      <button class="modal-close" onclick="AdminUsuarios.closeModal()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Nombre completo *</label>
+          <input type="text" id="mu-nombre" class="f-input" style="width:100%">
+        </div>
+        <div class="form-group">
+          <label>Usuario *</label>
+          <input type="text" id="mu-username" class="f-input" style="width:100%">
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="mu-email" class="f-input" style="width:100%">
+        </div>
+        <div class="form-group">
+          <label>Rol *</label>
+          <select id="mu-rol" class="f-input" style="width:100%">
+            <option value="operario">Operario</option>
+            <option value="supervisor">Supervisor</option>
+            <option value="viewer">Viewer (solo lectura)</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label id="mu-pass-label">Contraseña *</label>
+          <input type="password" id="mu-password" class="f-input" style="width:100%" placeholder="••••••••">
+        </div>
+        <div class="form-group">
+          <label>Estado</label>
+          <select id="mu-activo" class="f-input" style="width:100%">
+            <option value="true">Activo</option>
+            <option value="false">Inactivo</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="AdminUsuarios.closeModal()">Cancelar</button>
+      <button class="btn-save" onclick="AdminUsuarios.save()"><span id="mu-save-text">Guardar</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL LISTA -->
+<div class="modal-overlay" id="modal-lista">
+  <div class="modal" style="width:400px">
+    <div class="modal-header">
+      <span class="modal-title" id="ml-title">Agregar Cliente</span>
+      <button class="modal-close" onclick="AdminListas.closeModal()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Nombre *</label>
+        <input type="text" id="ml-valor" class="f-input" style="width:100%" placeholder="Ej: CPF">
+      </div>
+      <div class="form-group" style="margin-top:14px">
+        <label>Orden (número)</label>
+        <input type="number" id="ml-orden" class="f-input" style="width:100%" value="99">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="AdminListas.closeModal()">Cancelar</button>
+      <button class="btn-save" onclick="AdminListas.save()"><span id="ml-save-text">Guardar</span></button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script>
+// ============================================================
+// ⚙️  CONFIGURACIÓN — Solo cambia la URL del API
+// ============================================================
+const CONFIG = {
+  API_URL: 'https://script.google.com/macros/s/AKfycbyRI9S-qVkN6JwUqnvyKXyu0XxtHF1kdhw3BTwH32vcKTR6ybGGlXiTTpup2Ws2Af9w/exec'
+  // Los clientes y cultivos se cargan automáticamente desde Google Sheets (hoja Listas)
+};
+
+// ============================================================
+// API
+// ============================================================
+const API = {
+  token: null,
+
+  async call(action, data = {}) {
+    try {
+      const r = await fetch(CONFIG.API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({ action, token: this.token, data })
+      });
+      return await r.json();
+    } catch(e) {
+      return { success: false, message: 'Error de red: ' + e.message };
+    }
+  },
+
+  login:        (u, p)     => API.call('login', { username: u, password: p }),
+  getListas:    (tipo)     => API.call('getListas', { tipo }),
+  getData:      (m, f)     => API.call('getData', { modulo: m, filters: f || {} }),
+  createRecord: (m, r)     => API.call('createRecord', { modulo: m, record: r }),
+  updateRecord: (m, id, r) => API.call('updateRecord', { modulo: m, id, record: r }),
+  deleteRecord: (m, id)    => API.call('deleteRecord', { modulo: m, id })
+};
+
+// ============================================================
+// LISTAS (clientes y cultivos desde Sheets)
+// ============================================================
+const Listas = {
+  clientes: [],
+  cultivos: [],
+
+  async load() {
+    const [rc, rv] = await Promise.all([
+      API.getListas('CLIENTE'),
+      API.getListas('CULTIVO')
+    ]);
+    this.clientes = rc.success ? rc.data.map(i => i.valor) : [];
+    this.cultivos = rv.success ? rv.data.map(i => i.valor) : [];
+  },
+
+  fillSelect(id, items, placeholder = 'Seleccionar...') {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const keepFirst = el.options[0] && el.options[0].value === ''
+      ? `<option value="">${el.options[0].text}</option>` : '';
+    el.innerHTML = (placeholder ? `<option value="">${placeholder}</option>` : '')
+      + items.map(v => `<option value="${v}">${v}</option>`).join('');
+  },
+
+  populate() {
+    this.fillSelect('f-cliente',   this.clientes, 'Todos');
+    this.fillSelect('m-cliente',   this.clientes, 'Seleccionar...');
+    this.fillSelect('m-cultivo',   this.cultivos, 'Seleccionar...');
+  }
+};
+
+// ============================================================
+// AUTH
+// ============================================================
+const Auth = {
+  user: null,
+
+  async login() {
+    const u = document.getElementById('login-username').value.trim();
+    const p = document.getElementById('login-password').value;
+    const err = document.getElementById('login-error');
+    const btn = document.getElementById('login-btn-text');
+    err.style.display = 'none';
+    if (!u || !p) { err.textContent = 'Ingresa usuario y contraseña.'; err.style.display = 'block'; return; }
+    btn.textContent = 'Ingresando...';
+    const res = await API.login(u, p);
+    if (res.success) {
+      API.token = res.data.token;
+      this.user = res.data.user;
+      localStorage.setItem('tkn', res.data.token);
+      localStorage.setItem('usr', JSON.stringify(res.data.user));
+      await this._showApp();
+    } else {
+      err.textContent = res.message || 'Usuario o contraseña incorrectos.';
+      err.style.display = 'block';
+      btn.textContent = 'Ingresar';
+    }
+  },
+
+  logout() {
+    API.token = null; this.user = null;
+    localStorage.removeItem('tkn'); localStorage.removeItem('usr');
+    document.getElementById('app-screen').style.display = 'none';
+    document.getElementById('login-screen').style.display = 'flex';
+    document.getElementById('login-password').value = '';
+  },
+
+  async restore() {
+    const t = localStorage.getItem('tkn'), u = localStorage.getItem('usr');
+    if (t && u) { API.token = t; this.user = JSON.parse(u); await this._showApp(); return true; }
+    return false;
+  },
+
+  async _showApp() {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app-screen').style.display = 'flex';
+    document.getElementById('user-name').textContent = this.user.nombre || this.user.username;
+    document.getElementById('user-role').textContent = this.user.rol;
+    document.getElementById('user-avatar').textContent = (this.user.nombre || this.user.username)[0].toUpperCase();
+    // Cargar listas desde Sheets
+    await Listas.load();
+    Listas.populate();
+    if (this.user.rol === 'admin') {
+      document.getElementById('nav-admin-section').style.display = 'block';
+    }
+    Nav.open('reportes');
+    Nav.go('reporte-tiempos');
+  }
+};
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+const Nav = {
+  meta: {
+    'reporte-tiempos':  { p:'Reportes',         l:'Reporte de Tiempos de Envío' },
+    'balance-masas':    { p:'Reportes',         l:'Balance de Masas' },
+    'plan-procesos':    { p:'Trazabilidad',     l:'Plan de Procesos' },
+    'programa-empaque': { p:'Trazabilidad',     l:'Programa de Empaque' },
+    'mrp-materiales':   { p:'Planificación',    l:'MRP de Materiales' },
+    'admin-usuarios':   { p:'Administración',   l:'Usuarios' },
+    'admin-listas':     { p:'Administración',   l:'Clientes y Cultivos' }
+  },
+  toggle(s) {
+    const menu = document.getElementById('submenu-'+s);
+    const item = document.getElementById('nav-'+s);
+    const was  = menu.classList.contains('open');
+    document.querySelectorAll('.nav-submenu').forEach(m => m.classList.remove('open'));
+    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('expanded'));
+    if (!was) { menu.classList.add('open'); item.classList.add('expanded'); }
+  },
+  open(s) {
+    document.getElementById('submenu-'+s).classList.add('open');
+    document.getElementById('nav-'+s).classList.add('expanded');
+  },
+  go(id) {
+    document.querySelectorAll('.nav-subitem').forEach(el => el.classList.remove('active'));
+    const sub = document.getElementById('sub-'+id);
+    if (sub) sub.classList.add('active');
+    ['view-reporte-tiempos','view-admin-usuarios','view-admin-listas','view-placeholder'].forEach(v => {
+      const el = document.getElementById(v);
+      if (el) el.style.display = 'none';
+    });
+    if (id === 'reporte-tiempos') {
+      document.getElementById('view-reporte-tiempos').style.display = 'block';
+      RT.load();
+    } else if (id === 'admin-usuarios') {
+      document.getElementById('view-admin-usuarios').style.display = 'block';
+      AdminUsuarios.load();
+    } else if (id === 'admin-listas') {
+      document.getElementById('view-admin-listas').style.display = 'block';
+      AdminListas.load();
+    } else {
+      const m = this.meta[id] || { p:'—', l:id };
+      document.getElementById('ph-parent').textContent  = m.p;
+      document.getElementById('ph-current').textContent = m.l;
+      document.getElementById('view-placeholder').style.display = 'block';
+    }
+  }
+};
+
+// ============================================================
+// REPORTE DE TIEMPOS
+// ============================================================
+const RT = {
+  all: [], shown: [], editId: null,
+
+  async load() {
+    this._loading(true);
+    if (!document.getElementById('f-fecha').value)
+      document.getElementById('f-fecha').value = new Date().toISOString().slice(0,10);
+    const res = await API.getData('reporte_tiempos');
+    this._loading(false);
+    if (!res.success) { Toast.show('Error al cargar datos: ' + res.message, 'error'); return; }
+    this.all = res.data || [];
+    this.filter();
+  },
+
+  filter() {
+    const fecha   = document.getElementById('f-fecha').value;
+    const cliente = document.getElementById('f-cliente').value;
+    const normDate = d => d ? String(d).slice(0, 10) : '';
+    this.shown = this.all.filter(r =>
+      (!fecha   || normDate(r.fecha_proceso) === fecha) &&
+      (!cliente || r.cliente === cliente)
+    );
+    this._stats();
+    this._render();
+  },
+
+  _stats() {
+    const n    = this.shown.length;
+    const cerr = this.shown.filter(r => r.reporte === 'CERRADO').length;
+    const mins = this.shown.map(r => this._toMins(r.tiempo_transcurrido)).filter(t => t > 0);
+    const avg  = mins.length ? Math.round(mins.reduce((a,b)=>a+b,0)/mins.length) : 0;
+    document.getElementById('s-total').textContent    = n;
+    document.getElementById('s-cerrado').textContent  = cerr;
+    document.getElementById('s-pendiente').textContent= n - cerr;
+    const avgDec = avg ? (avg / 60).toFixed(1) + ' h' : '—';
+    document.getElementById('s-avg').textContent = avgDec;
+  },
+
+  _render() {
+    const tb = document.getElementById('rt-tbody');
+    if (!this.shown.length) {
+      tb.innerHTML = `<tr><td colspan="11"><div class="empty-state">
+        <i class="fa-solid fa-inbox"></i><p>No hay registros para los filtros seleccionados.</p>
+      </div></td></tr>`;
+      return;
+    }
+    tb.innerHTML = this.shown.map(r => this._row(r)).join('');
+  },
+
+  _row(r) {
+    const proc  = r.proceso      || 'PENDIENTE';
+    const traz  = r.trazabilidad || 'PENDIENTE';
+    const valid = r.validacion   || 'PENDIENTE';
+    const rep   = r.reporte      || 'PENDIENTE';
+    const hfin  = this._normalizeTime(r.hora_fin_proceso);
+    const henv  = this._normalizeTime(r.hora_envio_reporte);
+    const tiem  = this._toDecimalHours(r.tiempo_transcurrido);
+    const icon  = s => s==='CERRADO' ? '<i class="fa-solid fa-circle-check"></i>' : '<i class="fa-regular fa-circle"></i>';
+    return `<tr>
+      <td class="cell-cliente">${r.cliente||'—'}</td>
+      <td>${r.cultivo||'—'}</td>
+      <td>${this._fmtDate(r.fecha_proceso)}</td>
+      <td><span class="chip auto ${proc.toLowerCase()}" title="Auto: hora fin de proceso">${icon(proc)} ${proc}</span></td>
+      <td><span class="chip ${traz.toLowerCase()}" onclick="RT.toggle('${r.id}','trazabilidad','${traz}')" title="Clic para cambiar">${icon(traz)} ${traz}</span></td>
+      <td><span class="chip ${valid.toLowerCase()}" onclick="RT.toggle('${r.id}','validacion','${valid}')" title="Clic para cambiar">${icon(valid)} ${valid}</span></td>
+      <td><span class="chip auto ${rep.toLowerCase()}" title="Auto: hora de envío">${icon(rep)} ${rep}</span></td>
+      <td><input type="time" class="time-input" value="${hfin}" onchange="RT.setTime('${r.id}','hora_fin_proceso',this.value)" title="Hora fin de proceso"></td>
+      <td><input type="time" class="time-input" value="${henv}" onchange="RT.setTime('${r.id}','hora_envio_reporte',this.value)" title="Hora de envío del reporte"></td>
+      <td><span class="tiempo-val">${tiem}</span></td>
+      <td><div class="actions-cell">
+        <button class="btn-icon edit" onclick="RT.openModal('${r.id}')" title="Editar"><i class="fa-solid fa-pen"></i></button>
+        <button class="btn-icon del"  onclick="RT.del('${r.id}')" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
+      </div></td>
+    </tr>`;
+  },
+
+  async toggle(id, field, cur) {
+    const nxt = cur === 'CERRADO' ? 'PENDIENTE' : 'CERRADO';
+    const res = await API.updateRecord('reporte_tiempos', id, { [field]: nxt });
+    if (res.success) {
+      const item = this.all.find(r => r.id === id);
+      if (item) item[field] = nxt;
+      this.filter();
+      Toast.show('Estado actualizado', 'success');
+    } else { Toast.show('Error: ' + res.message, 'error'); }
+  },
+
+  async setTime(id, field, val) {
+    const item = this.all.find(r => r.id === id);
+    if (!item) return;
+    const upd = { [field]: val };
+    item[field] = val;
+    if (field === 'hora_fin_proceso') { upd.proceso = val ? 'CERRADO' : 'PENDIENTE'; item.proceso = upd.proceso; }
+    if (field === 'hora_envio_reporte') {
+      upd.reporte = val ? 'CERRADO' : 'PENDIENTE'; item.reporte = upd.reporte;
+      if (val && item.hora_fin_proceso) {
+        const t = this._calcTiempo(item.hora_fin_proceso, val);
+        upd.tiempo_transcurrido = t; item.tiempo_transcurrido = t;
+      }
+    }
+    const res = await API.updateRecord('reporte_tiempos', id, upd);
+    if (res.success) { this.filter(); }
+    else Toast.show('Error al guardar: ' + res.message, 'error');
+  },
+
+  openModal(id = null) {
+    this.editId = id;
+    // Refrescar listas en el modal por si cambiaron
+    Listas.fillSelect('m-cliente', Listas.clientes, 'Seleccionar...');
+    Listas.fillSelect('m-cultivo', Listas.cultivos, 'Seleccionar...');
+    document.getElementById('modal-title').textContent = id ? 'Editar Registro' : 'Agregar Registro';
+    if (id) {
+      const r = this.all.find(x => x.id === id) || {};
+      document.getElementById('m-cliente').value      = r.cliente       || '';
+      document.getElementById('m-cultivo').value      = r.cultivo       || '';
+      document.getElementById('m-fecha').value        = r.fecha_proceso || '';
+      document.getElementById('m-hora-fin').value     = this._normalizeTime(r.hora_fin_proceso);
+      document.getElementById('m-hora-envio').value   = this._normalizeTime(r.hora_envio_reporte);
+      document.getElementById('m-trazabilidad').value = r.trazabilidad  || 'PENDIENTE';
+      document.getElementById('m-validacion').value   = r.validacion    || 'PENDIENTE';
+      document.getElementById('m-obs').value          = r.observaciones  || '';
+    } else {
+      ['m-cliente','m-cultivo','m-hora-fin','m-hora-envio','m-obs'].forEach(i => document.getElementById(i).value='');
+      document.getElementById('m-fecha').value        = new Date().toISOString().slice(0,10);
+      document.getElementById('m-trazabilidad').value = 'PENDIENTE';
+      document.getElementById('m-validacion').value   = 'PENDIENTE';
+    }
+    document.getElementById('modal-overlay').classList.add('open');
+  },
+
+  closeModal() { document.getElementById('modal-overlay').classList.remove('open'); this.editId = null; },
+
+  async save() {
+    const cli = document.getElementById('m-cliente').value;
+    const cul = document.getElementById('m-cultivo').value;
+    const fec = document.getElementById('m-fecha').value;
+    if (!cli || !cul || !fec) { Toast.show('Cliente, Cultivo y Fecha son obligatorios.', 'error'); return; }
+    const hfin = document.getElementById('m-hora-fin').value;
+    const henv = document.getElementById('m-hora-envio').value;
+    const rec = {
+      cliente: cli, cultivo: cul, fecha_proceso: fec,
+      hora_fin_proceso: hfin, hora_envio_reporte: henv,
+      proceso:      hfin ? 'CERRADO' : 'PENDIENTE',
+      trazabilidad: document.getElementById('m-trazabilidad').value,
+      validacion:   document.getElementById('m-validacion').value,
+      reporte:      henv ? 'CERRADO' : 'PENDIENTE',
+      tiempo_transcurrido: (hfin && henv) ? this._calcTiempo(hfin, henv) : '00:00',
+      observaciones: document.getElementById('m-obs').value
+    };
+    document.getElementById('save-text').textContent = 'Guardando...';
+    const res = this.editId
+      ? await API.updateRecord('reporte_tiempos', this.editId, rec)
+      : await API.createRecord('reporte_tiempos', rec);
+    document.getElementById('save-text').textContent = 'Guardar';
+    if (res.success) { Toast.show(this.editId ? 'Registro actualizado.' : 'Registro creado.', 'success'); this.closeModal(); await this.load(); }
+    else Toast.show('Error: ' + res.message, 'error');
+  },
+
+  async del(id) {
+    if (!confirm('¿Eliminar este registro?')) return;
+    const res = await API.deleteRecord('reporte_tiempos', id);
+    if (res.success) { Toast.show('Registro eliminado.', 'success'); this.all = this.all.filter(r=>r.id!==id); this.filter(); }
+    else Toast.show('Error: ' + res.message, 'error');
+  },
+
+  _calcTiempo(t1,t2){const[h1,m1]=t1.split(':').map(Number);const[h2,m2]=t2.split(':').map(Number);let d=(h2*60+m2)-(h1*60+m1);if(d<0)d+=1440;return this._toTime(d);},
+  _toTime(m){return`${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;},
+  _toMins(t) {
+    if (!t) return 0;
+    const norm = this._normalizeTime(t);
+    if (!norm || norm === '00:00') return 0;
+    const [h, m] = norm.split(':').map(Number);
+    return (h || 0) * 60 + (m || 0);
+  },
+  // Normaliza tiempo de Sheets ("08:30", "1899-12-30T08:30:00Z", etc.) → "08:30"
+  _normalizeTime(t) {
+    if (!t) return '';
+    const s = String(t);
+    if (/^\d{1,2}:\d{2}/.test(s)) return s.slice(0, 5).padStart(5, '0');
+    const m = s.match(/T(\d{2}):(\d{2})/);
+    if (m) return `${m[1]}:${m[2]}`;
+    return '';
+  },
+  // Convierte HH:MM o fecha-tiempo de Sheets a "3.5 h"
+  _toDecimalHours(t) {
+    if (!t) return '—';
+    const norm = this._normalizeTime(t);
+    if (!norm) return '—';
+    const [h, m] = norm.split(':').map(Number);
+    if (isNaN(h)) return '—';
+    const dec = h + m / 60;
+    return dec === 0 ? '—' : dec.toFixed(1) + ' h';
+  },
+  // Formatea fecha en cualquier formato → "dd/MM/yyyy"
+  _fmtDate(d) {
+    if (!d) return '—';
+    const s = String(d);
+    const iso = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (iso) return `${iso[3]}/${iso[2]}/${iso[1]}`;
+    const dt = new Date(s);
+    if (!isNaN(dt)) {
+      return `${String(dt.getDate()).padStart(2,'0')}/${String(dt.getMonth()+1).padStart(2,'0')}/${dt.getFullYear()}`;
+    }
+    return s;
+  },
+  _loading(on){document.getElementById('rt-loading').classList.toggle('show',on);}
+};
+
+
+// ============================================================
+// ADMIN — USUARIOS
+// ============================================================
+const AdminUsuarios = {
+  all: [], editId: null,
+
+  async load() {
+    document.getElementById('au-loading').classList.add('show');
+    const res = await API.call('getUsuarios', {});
+    document.getElementById('au-loading').classList.remove('show');
+    if (!res.success) { Toast.show('Error: ' + res.message, 'error'); return; }
+    this.all = res.data || [];
+    this._render();
+  },
+
+  _render() {
+    const tb = document.getElementById('au-tbody');
+    if (!this.all.length) {
+      tb.innerHTML = `<tr><td colspan="7"><div class="empty-state"><i class="fa-solid fa-users"></i><p>No hay usuarios registrados.</p></div></td></tr>`;
+      return;
+    }
+    const rolLabel = { admin:'Admin', supervisor:'Supervisor', operario:'Operario', viewer:'Viewer' };
+    tb.innerHTML = this.all.map(u => `<tr>
+      <td style="font-weight:600">${u.nombre||'—'}</td>
+      <td><code style="background:#f0f0f0;padding:2px 6px;border-radius:4px;font-size:11px">${u.username}</code></td>
+      <td>${u.email||'—'}</td>
+      <td><span class="chip ${u.rol==='admin'?'cerrado':'pendiente'}" style="cursor:default">${rolLabel[u.rol]||u.rol}</span></td>
+      <td><span class="chip ${u.activo===true||u.activo==='TRUE'?'cerrado':'pendiente'}" style="cursor:default">
+        ${u.activo===true||u.activo==='TRUE' ? '<i class="fa-solid fa-circle-check"></i> Activo' : '<i class="fa-regular fa-circle"></i> Inactivo'}
+      </span></td>
+      <td style="color:#5f6368;font-size:11px">${u.last_login ? new Date(u.last_login).toLocaleDateString('es-PE') : '—'}</td>
+      <td><div class="actions-cell">
+        <button class="btn-icon edit" onclick="AdminUsuarios.openModal('${u.id}')" title="Editar"><i class="fa-solid fa-pen"></i></button>
+      </div></td>
+    </tr>`).join('');
+  },
+
+  openModal(id = null) {
+    this.editId = id;
+    document.getElementById('mu-title').textContent = id ? 'Editar Usuario' : 'Nuevo Usuario';
+    document.getElementById('mu-pass-label').textContent = id ? 'Nueva Contraseña (dejar vacío para no cambiar)' : 'Contraseña *';
+    if (id) {
+      const u = this.all.find(x => x.id === id) || {};
+      document.getElementById('mu-nombre').value   = u.nombre   || '';
+      document.getElementById('mu-username').value = u.username || '';
+      document.getElementById('mu-email').value    = u.email    || '';
+      document.getElementById('mu-rol').value      = u.rol      || 'operario';
+      document.getElementById('mu-password').value = '';
+      document.getElementById('mu-activo').value   = (u.activo===true||u.activo==='TRUE') ? 'true' : 'false';
+      document.getElementById('mu-username').disabled = true;
+    } else {
+      ['mu-nombre','mu-username','mu-email','mu-password'].forEach(i => document.getElementById(i).value='');
+      document.getElementById('mu-rol').value    = 'operario';
+      document.getElementById('mu-activo').value = 'true';
+      document.getElementById('mu-username').disabled = false;
+    }
+    document.getElementById('modal-usuario').classList.add('open');
+  },
+
+  closeModal() {
+    document.getElementById('modal-usuario').classList.remove('open');
+    document.getElementById('mu-username').disabled = false;
+    this.editId = null;
+  },
+
+  async save() {
+    const nombre   = document.getElementById('mu-nombre').value.trim();
+    const username = document.getElementById('mu-username').value.trim();
+    const password = document.getElementById('mu-password').value;
+    const rol      = document.getElementById('mu-rol').value;
+    const activo   = document.getElementById('mu-activo').value === 'true';
+    const email    = document.getElementById('mu-email').value.trim();
+
+    if (!nombre || (!this.editId && !username)) { Toast.show('Nombre y usuario son obligatorios.', 'error'); return; }
+    if (!this.editId && !password) { Toast.show('La contraseña es obligatoria para usuarios nuevos.', 'error'); return; }
+
+    document.getElementById('mu-save-text').textContent = 'Guardando...';
+    const d = { nombre, email, rol, activo };
+    if (password) d.password = password;
+    if (!this.editId) { d.username = username; }
+
+    const res = this.editId
+      ? await API.call('updateUsuario', { id: this.editId, ...d })
+      : await API.call('createUsuario', d);
+
+    document.getElementById('mu-save-text').textContent = 'Guardar';
+    if (res.success) {
+      Toast.show(this.editId ? 'Usuario actualizado.' : 'Usuario creado.', 'success');
+      this.closeModal();
+      await this.load();
+    } else { Toast.show('Error: ' + res.message, 'error'); }
+  }
+};
+
+// ============================================================
+// ADMIN — LISTAS (clientes y cultivos)
+// ============================================================
+const AdminListas = {
+  all: [], editId: null, editTipo: null,
+
+  async load() {
+    const res = await API.call('getListas', {});
+    if (!res.success) { Toast.show('Error: ' + res.message, 'error'); return; }
+    this.all = res.data || [];
+    this._render();
+  },
+
+  _render() {
+    const clientes = this.all.filter(i => i.tipo === 'CLIENTE');
+    const cultivos  = this.all.filter(i => i.tipo === 'CULTIVO');
+    this._renderTable('al-clientes-tbody', clientes);
+    this._renderTable('al-cultivos-tbody', cultivos);
+  },
+
+  _renderTable(tbId, items) {
+    const tb = document.getElementById(tbId);
+    if (!items.length) {
+      tb.innerHTML = `<tr><td colspan="4"><div class="empty-state" style="padding:24px"><i class="fa-solid fa-inbox"></i><p>Sin registros aún.</p></div></td></tr>`;
+      return;
+    }
+    tb.innerHTML = items.map((item, i) => `<tr>
+      <td style="color:#5f6368;font-size:11px">${item.orden||i+1}</td>
+      <td style="font-weight:500">${item.valor}</td>
+      <td><span class="chip ${item.activo===true||item.activo==='TRUE'?'cerrado':'pendiente'}" style="cursor:default">
+        ${item.activo===true||item.activo==='TRUE' ? 'Activo' : 'Inactivo'}
+      </span></td>
+      <td><div class="actions-cell">
+        <button class="btn-icon edit" onclick="AdminListas.openModal('${item.tipo}','${item.id}')" title="Editar"><i class="fa-solid fa-pen"></i></button>
+        <button class="btn-icon del" onclick="AdminListas.toggle('${item.id}','${item.activo}')" title="${item.activo===true||item.activo==='TRUE'?'Desactivar':'Activar'}">
+          <i class="fa-solid ${item.activo===true||item.activo==='TRUE'?'fa-eye-slash':'fa-eye'}"></i>
+        </button>
+      </div></td>
+    </tr>`).join('');
+  },
+
+  openModal(tipo, id = null) {
+    this.editId   = id;
+    this.editTipo = tipo;
+    const label = tipo === 'CLIENTE' ? 'Cliente' : 'Cultivo';
+    document.getElementById('ml-title').textContent = id ? `Editar ${label}` : `Agregar ${label}`;
+    if (id) {
+      const item = this.all.find(x => x.id === id) || {};
+      document.getElementById('ml-valor').value = item.valor || '';
+      document.getElementById('ml-orden').value = item.orden || 99;
+    } else {
+      document.getElementById('ml-valor').value = '';
+      document.getElementById('ml-orden').value = 99;
+    }
+    document.getElementById('modal-lista').classList.add('open');
+  },
+
+  closeModal() { document.getElementById('modal-lista').classList.remove('open'); this.editId = null; },
+
+  async save() {
+    const valor = document.getElementById('ml-valor').value.trim();
+    const orden = parseInt(document.getElementById('ml-orden').value) || 99;
+    if (!valor) { Toast.show('El nombre es obligatorio.', 'error'); return; }
+
+    document.getElementById('ml-save-text').textContent = 'Guardando...';
+    const res = this.editId
+      ? await API.call('updateLista', { id: this.editId, valor, orden })
+      : await API.call('createLista', { tipo: this.editTipo, valor, orden });
+
+    document.getElementById('ml-save-text').textContent = 'Guardar';
+    if (res.success) {
+      Toast.show('Guardado correctamente.', 'success');
+      this.closeModal();
+      await this.load();
+      await Listas.load();
+      Listas.populate();
+    } else { Toast.show('Error: ' + res.message, 'error'); }
+  },
+
+  async toggle(id, curActivo) {
+    const nuevoActivo = !(curActivo === true || curActivo === 'TRUE');
+    const res = await API.call('updateLista', { id, activo: nuevoActivo });
+    if (res.success) {
+      Toast.show(nuevoActivo ? 'Elemento activado.' : 'Elemento desactivado.', 'success');
+      await this.load();
+      await Listas.load();
+      Listas.populate();
+    } else { Toast.show('Error: ' + res.message, 'error'); }
+  }
+};
+
+// ============================================================
+// TOAST
+// ============================================================
+const Toast = {
+  show(msg, type='info', ms=3000) {
+    const c = document.getElementById('toast-container');
+    const t = document.createElement('div');
+    t.className = 'toast ' + type; t.textContent = msg;
+    c.appendChild(t);
+    setTimeout(() => t.remove(), ms);
+  }
+};
+
+// ============================================================
+// INIT
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('login-password').addEventListener('keydown', e => {
+    if (e.key === 'Enter') Auth.login();
+  });
+  document.getElementById('modal-overlay').addEventListener('click', e => {
+    if (e.target.id === 'modal-overlay') RT.closeModal();
+  });
+  document.getElementById('modal-usuario').addEventListener('click', e => {
+    if (e.target.id === 'modal-usuario') AdminUsuarios.closeModal();
+  });
+  document.getElementById('modal-lista').addEventListener('click', e => {
+    if (e.target.id === 'modal-lista') AdminListas.closeModal();
+  });
+  Auth.restore().then(ok => {
+    if (!ok) document.getElementById('login-screen').style.display = 'flex';
+  });
+});
+</script>
+</body>
+</html>
