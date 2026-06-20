@@ -3637,7 +3637,7 @@ const ProgramaSemanal = {
       ProgramaSemanal._setVal(fecha,cultivo,c.linea,c.turno,'horas_plan',horas);
     });
     this._rerenderCultivo(cultivo);
-    Toast.show('Horas calculadas: '+horas+'h para consumir '+ProgramaSemanal._fmt(disponible)+' Kg','success');
+    Toast.show('Horas calculadas: '+Number(horas).toLocaleString('es-PE',{minimumFractionDigits:2,maximumFractionDigits:2})+'h para consumir '+ProgramaSemanal._fmt(disponible)+' Kg','success');
   },
 
   showAddCombo(cultivo, ci) {
