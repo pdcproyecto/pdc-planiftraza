@@ -639,25 +639,6 @@
       </div>
       <div class="content-body" style="position:relative">
 
-        <!-- Mini-login costos (visible solo cuando no hay token) -->
-        <div id="cd-login-overlay" class="cd-login-overlay" style="display:none">
-          <div class="cd-login-card">
-            <i class="fa-solid fa-coins" style="font-size:36px;color:#16a34a;margin-bottom:12px;display:block"></i>
-            <div style="font-size:16px;font-weight:700;margin-bottom:6px">Conectar Costos Diarios</div>
-            <p style="font-size:13px;color:#5f6368;margin-bottom:20px">Ingresa tu contraseña del sistema de costos para continuar.</p>
-            <div class="form-group">
-              <label>Email</label>
-              <input type="email" id="cd-login-email" placeholder="tu@email.com" style="width:100%">
-            </div>
-            <div class="form-group">
-              <label>Contraseña</label>
-              <input type="password" id="cd-login-pass" placeholder="Contraseña" style="width:100%" onkeydown="if(event.key==='Enter')CostosDashboard._doLogin()">
-            </div>
-            <div id="cd-login-err" style="color:#d93025;font-size:12px;margin-bottom:10px;display:none"></div>
-            <button class="btn-primary" onclick="CostosDashboard._doLogin()" style="width:100%;padding:10px">Conectar</button>
-          </div>
-        </div>
-
         <!-- Contenido dashboard -->
         <div id="cd-dashboard-content" style="display:none">
           <!-- Controles -->
@@ -759,24 +740,6 @@
         </div>
       </div>
       <div class="content-body">
-
-        <!-- Mini-login costos carga -->
-        <div id="cd-carga-login-overlay" class="cd-login-overlay" style="display:none">
-          <div class="cd-login-card">
-            <i class="fa-solid fa-coins" style="font-size:36px;color:#16a34a;margin-bottom:12px;display:block"></i>
-            <div style="font-size:16px;font-weight:700;margin-bottom:6px">Conectar Costos Diarios</div>
-            <div class="form-group">
-              <label>Email</label>
-              <input type="email" id="cd-carga-login-email" placeholder="tu@email.com" style="width:100%">
-            </div>
-            <div class="form-group">
-              <label>Contraseña</label>
-              <input type="password" id="cd-carga-login-pass" placeholder="Contraseña" style="width:100%" onkeydown="if(event.key==='Enter')CostosCarga._doLogin()">
-            </div>
-            <div id="cd-carga-login-err" style="color:#d93025;font-size:12px;margin-bottom:10px;display:none"></div>
-            <button class="btn-primary" onclick="CostosCarga._doLogin()" style="width:100%;padding:10px">Conectar</button>
-          </div>
-        </div>
 
         <!-- Contenido carga -->
         <div id="cd-carga-content" style="display:none">
@@ -5478,12 +5441,12 @@ const DBProcesos = {
 const COSTOS_GAS_URL = 'https://script.google.com/macros/s/AKfycbzURuwHQyKHH3ZiyPQXwdVqLSDEI8Etyg0izJSGL2uY5PtWIJ4xg0NNktvgdzCY6hSLyw/exec';
 
 const CostosAPI = {
-  getToken()    { return localStorage.getItem('costos_token') || null; },
-  setToken(t)   { localStorage.setItem('costos_token', t); },
-  clearToken()  { localStorage.removeItem('costos_token'); },
-  isLoggedIn()  { return !!this.getToken(); },
-  getInfo()     { try { return JSON.parse(localStorage.getItem('costos_info') || '{}'); } catch(e) { return {}; } },
-  setInfo(o)    { localStorage.setItem('costos_info', JSON.stringify(o)); },
+  getToken()    { return 'PTC_COSTOS_PORTAL_2024'; }, // Token fijo de integración
+  setToken(t)   {},
+  clearToken()  {},
+  isLoggedIn()  { return true; },
+  getInfo()     { return { nombre: (Auth.user && Auth.user.nombre) || '', rol: (Auth.user && Auth.user.rol) || 'operador' }; },
+  setInfo(o)    {},
 
   async call(action, params = {}) {
     const token = this.getToken();
@@ -5561,43 +5524,13 @@ const CostosDashboard = {
   _chartPareto: null,
 
   async load() {
-    if (!CostosAPI.isLoggedIn()) {
-      this._showLogin();
-      return;
-    }
-    this._hideLogin();
+    document.getElementById('cd-dashboard-content').style.display = '';
     const hoy = new Date();
     const mesEl = document.getElementById('cd-filtro-mes');
     if (mesEl && !mesEl.value) {
       mesEl.value = hoy.getFullYear() + '-' + String(hoy.getMonth()+1).padStart(2,'0');
     }
     if (!this._dataMes) await this.cargarMes();
-  },
-
-  _showLogin() {
-    const ov = document.getElementById('cd-login-overlay');
-    if (ov) ov.style.display = 'flex';
-    document.getElementById('cd-dashboard-content').style.display = 'none';
-  },
-
-  _hideLogin() {
-    const ov = document.getElementById('cd-login-overlay');
-    if (ov) ov.style.display = 'none';
-    document.getElementById('cd-dashboard-content').style.display = '';
-  },
-
-  async _doLogin() {
-    const email = document.getElementById('cd-login-email').value.trim();
-    const pass  = document.getElementById('cd-login-pass').value;
-    const err   = document.getElementById('cd-login-err');
-    if (!email || !pass) { if(err) err.textContent = 'Ingresa usuario y contraseña'; return; }
-    if(err) err.textContent = '';
-    const res = await CostosAPI.login(email, pass);
-    if (!res.ok) { if(err) err.textContent = res.error || 'Credenciales incorrectas'; return; }
-    CostosAPI.setToken(res.token);
-    CostosAPI.setInfo({ nombre: res.nombre, rol: res.rol });
-    this._hideLogin();
-    await this.cargarMes();
   },
 
   async cargarMes() {
@@ -6034,11 +5967,7 @@ const CostosCarga = {
   _cultivos: [],
 
   async load() {
-    if (!CostosAPI.isLoggedIn()) {
-      this._showLogin();
-      return;
-    }
-    this._hideLogin();
+    document.getElementById('cd-carga-content').style.display = '';
     if (!this._estructura.length) await this._inicializar();
     const hoy = new Date();
     const mesActual = hoy.getFullYear() + '-' + String(hoy.getMonth()+1).padStart(2,'0');
@@ -6051,37 +5980,10 @@ const CostosCarga = {
     if (mesProd && !mesProd.value) mesProd.value = mesActual;
     if (fechaEjec && !fechaEjec.value) fechaEjec.value = fechaHoy;
     if (fechaProdReal && !fechaProdReal.value) fechaProdReal.value = fechaHoy;
-    const info = CostosAPI.getInfo();
-    if (info.rol === 'admin') {
+    if (Auth.user && Auth.user.rol === 'admin') {
       const tabU = document.getElementById('cd-carga-tab-usuarios');
       if (tabU) tabU.style.display = '';
     }
-  },
-
-  _showLogin() {
-    const ov = document.getElementById('cd-carga-login-overlay');
-    if (ov) ov.style.display = 'flex';
-    document.getElementById('cd-carga-content').style.display = 'none';
-  },
-
-  _hideLogin() {
-    const ov = document.getElementById('cd-carga-login-overlay');
-    if (ov) ov.style.display = 'none';
-    document.getElementById('cd-carga-content').style.display = '';
-  },
-
-  async _doLogin() {
-    const email = document.getElementById('cd-carga-login-email').value.trim();
-    const pass  = document.getElementById('cd-carga-login-pass').value;
-    const err   = document.getElementById('cd-carga-login-err');
-    if (!email || !pass) { if(err) err.textContent = 'Ingresa usuario y contraseña'; return; }
-    if(err) err.textContent = '';
-    const res = await CostosAPI.login(email, pass);
-    if (!res.ok) { if(err) err.textContent = res.error || 'Credenciales incorrectas'; return; }
-    CostosAPI.setToken(res.token);
-    CostosAPI.setInfo({ nombre: res.nombre, rol: res.rol });
-    this._hideLogin();
-    await this._inicializar();
   },
 
   async _inicializar() {
