@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Programa de Proceso — Packing del Carmen SAC</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *  { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; background: #f0f2f5; color: #202124; min-height: 100vh; padding-bottom: 12px; }
+
+    /* ── Header ─────────────────────────────────────────── */
+    .header {
+      background: #1e2a3b;
+      color: #fff;
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 8px rgba(0,0,0,.3);
+    }
+    .header-logo {
+      width: 36px; height: 36px;
+      background: #1a73e8;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; font-weight: 800; flex-shrink: 0;
+    }
+    .header-text { flex: 1; }
+    .header-brand { font-size: 11px; font-weight: 500; color: rgba(255,255,255,.5); text-transform: uppercase; letter-spacing: .5px; }
+    .header-title { font-size: 15px; font-weight: 700; }
+    .refresh-pill {
+      background: rgba(255,255,255,.1);
+      border: 1px solid rgba(255,255,255,.15);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      display: flex; align-items: center; gap: 8px;
+      white-space: nowrap;
+    }
+    .countdown-num {
+      font-size: 18px; font-weight: 800;
+      color: #4fc3f7;
+      min-width: 22px; text-align: center;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* ── Filters ─────────────────────────────────────────── */
+    .filters {
+      background: #fff;
+      padding: 10px 24px;
+      display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+      border-bottom: 1px solid #e0e0e0;
+      box-shadow: 0 2px 4px rgba(0,0,0,.05);
+    }
+    .fg { display: flex; align-items: center; gap: 7px; }
+    .fg label { font-size: 12px; font-weight: 600; color: #5f6368; white-space: nowrap; }
+    .fi {
+      padding: 6px 10px;
+      border: 1px solid #ddd; border-radius: 6px;
+      font-size: 13px; font-family: inherit; outline: none;
+      transition: border-color .15s;
+    }
+    .fi:focus { border-color: #1a73e8; box-shadow: 0 0 0 3px rgba(26,115,232,.1); }
+    .btn-now {
+      background: #1a73e8; color: #fff;
+      border: none; padding: 7px 14px; border-radius: 6px;
+      font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit;
+      transition: background .15s;
+    }
+    .btn-now:hover { background: #1557b0; }
+    .last-upd { margin-left: auto; font-size: 11px; color: #5f6368; }
+
+    /* ── Content ─────────────────────────────────────────── */
+    .content { padding: 14px 24px; }
+
+    /* ── Card / Section ───────────────────────────────────── */
+    .card {
+      background: #fff; border-radius: 10px; margin-bottom: 14px;
+      overflow: hidden;
+      box-shadow: 0 1px 4px rgba(0,0,0,.08);
+    }
+    .card-header {
+      padding: 10px 16px; border-bottom: 1px solid #e0e0e0;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .card-title {
+      font-size: 11px; font-weight: 700; color: #5f6368;
+      text-transform: uppercase; letter-spacing: .5px;
+    }
+
+    /* ── Legend ──────────────────────────────────────────── */
+    .legend { display: flex; gap: 14px; margin-left: auto; flex-wrap: wrap; }
+    .leg-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #5f6368; }
+    .leg-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+
+    /* ── Tables ──────────────────────────────────────────── */
+    .tw { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th {
+      background: #f8f9fa;
+      padding: 8px 10px;
+      font-size: 10px; font-weight: 700; color: #5f6368;
+      text-align: left;
+      border-bottom: 2px solid #e0e0e0;
+      white-space: nowrap;
+      text-transform: uppercase; letter-spacing: .3px;
+    }
+    td {
+      padding: 9px 10px; font-size: 13px;
+      border-bottom: 1px solid #f0f2f5;
+      vertical-align: middle;
+    }
+    tr:last-child td { border-bottom: none; }
+    tbody tr:hover td { background: rgba(0,0,0,.02); }
+
+    /* ── Row colors ──────────────────────────────────────── */
+    .rp  { background: #e8f5e9 !important; }
+    .rep { background: #fffde7 !important; }
+    .rpi { background: #e3f2fd !important; }
+    .rpr { background: #fce4ec !important; }
+    .rrj { background: #fce4ec !important; opacity:.8; }
+
+    /* ── Badges ──────────────────────────────────────────── */
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 700; white-space: nowrap; }
+    .bp  { background: #e8f5e9; color: #137333; border: 1px solid #a5d6a7; }
+    .bep { background: #fffde7; color: #a87e00; border: 1px solid #fff176; }
+    .bpi { background: #e3f2fd; color: #1565c0; border: 1px solid #90caf9; }
+    .bpr { background: #fce4ec; color: #c62828; border: 1px solid #f48fb1; }
+    .brj { background: #fce4ec; color: #880e4f; border: 1px solid #f48fb1; }
+
+    /* ── Empty / loading ─────────────────────────────────── */
+    .empty-cell { text-align: center; padding: 24px; color: #5f6368; font-style: italic; font-size: 13px; }
+    .err-cell   { text-align: center; padding: 18px; color: #d93025; font-size: 13px; }
+
+    /* ── Progress bar (fixed bottom) ─────────────────────── */
+    .pbar { position: fixed; bottom: 0; left: 0; width: 100%; height: 4px; background: #e0e0e0; z-index: 200; }
+    .pfill { height: 100%; background: linear-gradient(90deg, #1a73e8, #4fc3f7); transition: width 1s linear; }
+
+    /* ── Tn/h highlight ──────────────────────────────────── */
+    .tn-ok { color: #137333; font-weight: 700; }
+
+    @media (max-width: 768px) {
+      .header { padding: 10px 14px; }
+      .content { padding: 10px 14px; }
+      .filters { padding: 8px 14px; }
+      .header-title { font-size: 13px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <img src="Logo.jpeg" alt="PDC" style="width:40px;height:40px;object-fit:contain;border-radius:7px;flex-shrink:0;background:#fff;padding:2px">
+  <div class="header-text">
+    <div class="header-brand">Packing del Carmen SAC</div>
+    <div class="header-title">PROGRAMA DE PROCESO DIARIO — EN TIEMPO REAL</div>
+  </div>
+  <div class="refresh-pill">
+    <span style="color:rgba(255,255,255,.6);font-size:11px">Actualiza en</span>
+    <span class="countdown-num" id="countdown">10</span>
+    <span style="color:rgba(255,255,255,.6);font-size:11px">seg</span>
+  </div>
+</header>
+
+<!-- FILTERS -->
+<div class="filters">
+  <div class="fg">
+    <label>Fecha:</label>
+    <input type="date" class="fi" id="f-fecha">
+  </div>
+  <div class="fg">
+    <label>Línea:</label>
+    <select class="fi" id="f-linea">
+      <option value="">Todas las líneas</option>
+    </select>
+  </div>
+  <div class="fg">
+    <label>Cliente:</label>
+    <select class="fi" id="f-cliente">
+      <option value="">Todos</option>
+    </select>
+  </div>
+  <button class="btn-now" onclick="manualRefresh()">↻ Actualizar ahora</button>
+  <div class="last-upd" id="last-upd"></div>
+</div>
+
+<!-- CONTENT -->
+<div class="content">
+
+  <!-- RESUMEN POR TURNO -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Resumen por Turno</span>
+      <div class="legend">
+        <div class="leg-item"><div class="leg-dot" style="background:#e8f5e9;border:1px solid #a5d6a7"></div>Procesado</div>
+        <div class="leg-item"><div class="leg-dot" style="background:#fffde7;border:1px solid #fff176"></div>En Proceso</div>
+        <div class="leg-item"><div class="leg-dot" style="background:#e3f2fd;border:1px solid #90caf9"></div>En Piso</div>
+        <div class="leg-item"><div class="leg-dot" style="background:#fce4ec;border:1px solid #f48fb1"></div>Proyectado</div>
+      </div>
+    </div>
+    <div class="tw">
+      <table>
+        <thead><tr>
+          <th>Turno</th>
+          <th style="text-align:right">Kg Programados</th>
+          <th style="text-align:right">Kg Procesados</th>
+          <th style="text-align:right">Tn/h Promedio Real</th>
+          <th style="text-align:center">% Avance</th>
+          <th style="text-align:right">Jabas Procesadas</th>
+          <th style="text-align:center">H. Inicio</th>
+          <th style="text-align:center">H. Fin Efectiva</th>
+          <th style="text-align:center">Horas Proceso</th>
+        </tr></thead>
+        <tbody id="sum-tbody">
+          <tr><td class="empty-cell" colspan="9">Cargando datos...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- DETALLE DE LOTES -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title" id="det-title">Detalle de Lotes</span>
+    </div>
+    <div class="tw">
+      <table>
+        <thead><tr>
+          <th>Turno</th>
+          <th>Ord.</th>
+          <th>Cliente Export.</th>
+          <th>N°FUC</th>
+          <th>N°GUIA</th>
+          <th>Variedad</th>
+          <th>Productor</th>
+          <th style="text-align:right">Kg Recib.</th>
+          <th style="text-align:right">Jabas</th>
+          <th>Status</th>
+          <th style="text-align:right">Tn/h Proy.</th>
+          <th style="text-align:right">Tn/h Real</th>
+          <th style="text-align:center">H. Inicio</th>
+          <th style="text-align:center;color:#137333">H. Fin Efect.</th>
+          <th style="color:#7b1fa2">Obs. Calidad</th>
+        </tr></thead>
+        <tbody id="det-tbody">
+          <tr><td class="empty-cell" colspan="15">Cargando datos...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- PROGRESS BAR -->
+<div class="pbar"><div class="pfill" id="pfill" style="width:100%"></div></div>
+
+<script>
+// ─── CONFIG ─────────────────────────────────────────────────────────
+const API_URL  = 'https://script.google.com/macros/s/AKfycbyRI9S-qVkN6JwUqnvyKXyu0XxtHF1kdhw3BTwH32vcKTR6ybGGlXiTTpup2Ws2Af9w/exec';
+const INTERVAL = 10; // segundos entre refresco
+
+// ─── Estado ─────────────────────────────────────────────────────────
+let cd = INTERVAL;
+let tmr;
+
+// ─── Inicio ─────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', async () => {
+  document.getElementById('f-fecha').value = todayStr();
+  await loadLineas();
+  await loadData();
+  startTimer();
+});
+
+// ─── Líneas ──────────────────────────────────────────────────────────
+async function loadLineas() {
+  try {
+    const r = await api({ action: 'getPublicListas', tipo: 'LINEA' });
+    if (r.success && r.data.length) {
+      const sel = document.getElementById('f-linea');
+      r.data.forEach(item => {
+        const o = document.createElement('option');
+        o.value = item.valor; o.textContent = item.valor;
+        sel.appendChild(o);
+      });
+    }
+  } catch {}
+}
+
+// ─── Carga ───────────────────────────────────────────────────────────
+async function loadData() {
+  const fecha    = document.getElementById('f-fecha').value;
+  const linea    = document.getElementById('f-linea').value;
+  const cliente  = document.getElementById('f-cliente').value;
+  try {
+    const r = await api({ action: 'getPublicPrograma', fecha, linea });
+    if (r.success) {
+      const allRows = cascade(r.data || []);
+      // Poblar selector de clientes
+      const sel = document.getElementById('f-cliente');
+      const curVal = sel.value;
+      const clientes = [...new Set(allRows.map(r => r.cliente_exportador).filter(Boolean))].sort();
+      sel.innerHTML = '<option value="">Todos</option>'
+        + clientes.map(c => `<option value="${c}"${c===curVal?' selected':''}>${c}</option>`).join('');
+      // Filtrar por cliente si hay uno seleccionado
+      const rows = cliente ? allRows.filter(r => r.cliente_exportador === cliente) : allRows;
+      renderSummary(rows);
+      renderDetail(rows, linea);
+      document.getElementById('last-upd').textContent =
+        'Última actualización: ' + new Date().toLocaleTimeString('es-PE');
+    } else {
+      setError(r.message || 'Error al cargar datos');
+    }
+  } catch (e) {
+    setError('Error de conexión. Reintentando...');
+  }
+}
+
+function manualRefresh() { loadData(); resetTimer(); }
+
+// ─── Cascada de cálculos de horas (igual que en el portal) ───────────
+function cascade(rows) {
+  const turnos = [...new Set(rows.map(r => r.turno || ''))];
+  turnos.forEach(t => {
+    const g = rows.filter(r => (r.turno || '') === t);
+    g.forEach((r, i) => {
+      // Hora inicio
+      r._hIni = i === 0
+        ? normT(r.hora_inicio_real)
+        : addMin(normT(g[i-1].hora_final_real) || g[i-1]._hFinCalc || '', parseFloat(g[i-1].tiempo_refrigerio) || 0);
+      // Hora fin proyectada
+      const kg = parseFloat(r.kg_recibidos) || 0;
+      const tp = parseFloat(r.tn_hora_proyect) || 0;
+      r._hFinCalc = r._hIni && kg > 0 && tp > 0
+        ? addMin(r._hIni, Math.ceil((kg / 1000 / tp) * 60 / 10) * 10)
+        : '';
+      // H.Fin efectiva: real si existe, proyectada si no
+      r._hFinEfectiva = normT(r.hora_final_real) || r._hFinCalc || '';
+      // Tn/h real
+      const fin = r._hFinEfectiva;
+      const hrs = r._hIni && fin ? diffH(r._hIni, fin) : 0;
+      r._tnReal = hrs > 0 && kg > 0 ? ((kg / 1000) / hrs).toFixed(2) : '';
+    });
+  });
+  return rows;
+}
+
+// ─── Render resumen ──────────────────────────────────────────────────
+function renderSummary(rows) {
+  const tb = document.getElementById('sum-tbody');
+  const ts = [...new Set(rows.map(r => r.turno || '').filter(Boolean))].sort();
+  if (!ts.length) {
+    tb.innerHTML = `<tr><td class="empty-cell" colspan="8">Sin datos para los filtros seleccionados.</td></tr>`;
+    return;
+  }
+  tb.innerHTML = ts.map(t => {
+    const g    = rows.filter(r => (r.turno || '') === t);
+    const prog = g.reduce((s, r) => s + (parseFloat(r.kg_recibidos) || 0), 0);
+    const proc = g.filter(r => r.status_lote === 'PROCESADO').reduce((s, r) => s + (parseFloat(r.kg_recibidos) || 0), 0);
+    const jabs = g.filter(r => r.status_lote === 'PROCESADO').reduce((s, r) => s + (parseFloat(r.cant_jabas) || 0), 0);
+    const av    = prog > 0 ? (proc / prog * 100).toFixed(1) : '0.0';
+    const avC   = parseFloat(av) >= 100 ? '#137333' : parseFloat(av) >= 50 ? '#a87e00' : '#d93025';
+    // Tn/h: desde inicio del PRIMER PROCESADO hasta fin del ÚLTIMO PROCESADO, descontando refrigerios entre ellos
+    const hIniFirst  = g[0] ? g[0]._hIni : '';
+    const procesadoG = g.filter(r => r.status_lote === 'PROCESADO');
+    const firstProcG = procesadoG[0] || null;
+    const lastProcG  = procesadoG.length ? procesadoG[procesadoG.length - 1] : null;
+    const hIniProcG  = firstProcG ? (firstProcG._hIni || '') : '';
+    const hFinLastG  = lastProcG  ? (lastProcG._hFinEfectiva || '') : '';
+    let tnTotal = null, spanHrsProc = 0;
+    if (hIniProcG && hFinLastG && proc > 0) {
+      const firstOrd = parseInt(firstProcG.orden) || 0;
+      const lastOrd  = parseInt(lastProcG.orden)  || 0;
+      const between  = g.filter(r => { const o = parseInt(r.orden)||0; return o >= firstOrd && o < lastOrd; });
+      const totalRef = between.reduce((s,r) => s + (parseFloat(r.tiempo_refrigerio)||0), 0);
+      spanHrsProc    = diffH(hIniProcG, hFinLastG) - (totalRef / 60);
+      if (spanHrsProc > 0) tnTotal = ((proc / 1000) / spanHrsProc).toFixed(2);
+    }
+    const hrsProc = spanHrsProc > 0
+      ? (() => { const h = Math.floor(spanHrsProc); const m = Math.round((spanHrsProc - h) * 60); return `${h}h ${String(m).padStart(2,'0')}m`; })()
+      : '—';
+    // H.Fin efectiva del último orden con hora (para mostrar en resumen)
+    const hFinDisplay = hFinLastG || (g.length ? g[g.length-1]._hFinEfectiva || '' : '');
+    return `<tr>
+      <td style="font-weight:700;font-size:14px">${t}</td>
+      <td style="text-align:right">${prog > 0 ? prog.toLocaleString('es-PE') + ' kg' : '—'}</td>
+      <td style="text-align:right">${proc > 0 ? proc.toLocaleString('es-PE') + ' kg' : '—'}</td>
+      <td style="text-align:right" class="${tnTotal ? 'tn-ok' : ''}">${tnTotal ? tnTotal + ' tn/h' : '—'}</td>
+      <td style="text-align:center;font-weight:700;font-size:15px;color:${avC}">${av}%</td>
+      <td style="text-align:right">${jabs > 0 ? jabs.toLocaleString('es-PE') : '—'}</td>
+      <td style="text-align:center">${hIniFirst || '—'}</td>
+      <td style="text-align:center">${hFinDisplay || '—'}</td>
+      <td style="text-align:center;font-weight:600;color:#1a73e8">${hrsProc}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ─── Render detalle ──────────────────────────────────────────────────
+const CLS = { PROCESADO:'rp','EN PROCESO':'rep','EN PISO':'rpi',PROYECTADO:'rpr',RECHAZADO:'rrj' };
+const BDG = {
+  PROCESADO:   '<span class="badge bp">PROCESADO</span>',
+  'EN PROCESO':'<span class="badge bep">EN PROCESO</span>',
+  'EN PISO':   '<span class="badge bpi">EN PISO</span>',
+  PROYECTADO:  '<span class="badge bpr">PROYECTADO</span>',
+  RECHAZADO:   '<span class="badge brj">RECHAZADO</span>'
+};
+
+function renderDetail(rows, linea) {
+  const lineaT = linea ? ` — LÍNEA ${linea}` : '';
+  document.getElementById('det-title').textContent = `Detalle de Lotes${lineaT}`;
+  const tb = document.getElementById('det-tbody');
+  if (!rows.length) {
+    tb.innerHTML = `<tr><td class="empty-cell" colspan="15">No hay registros para los filtros seleccionados.</td></tr>`;
+    return;
+  }
+  tb.innerHTML = rows.map(r => {
+    const cls   = CLS[r.status_lote] || '';
+    const badge = BDG[r.status_lote] || `<span class="badge">${r.status_lote || '—'}</span>`;
+    const tnP   = parseFloat(r.tn_hora_proyect) > 0 ? parseFloat(r.tn_hora_proyect).toFixed(2) : '—';
+    const kgN   = parseFloat(r.kg_recibidos);
+    const jabas = parseFloat(r.cant_jabas);
+    const fmtKg = v => { const n = parseFloat(v); return (!n && n!==0) ? '—' : n.toLocaleString('en-US',{minimumFractionDigits:1,maximumFractionDigits:1}); };
+    const hFinEfCol = r._hFinEfectiva
+      ? `<span style="font-weight:600;color:${r.hora_final_real?'#137333':'#1565c0'}">${r._hFinEfectiva}</span>`
+      : '—';
+    return `<tr class="${cls}">
+      <td style="font-weight:700">${r.turno || '—'}</td>
+      <td style="text-align:center;font-weight:700">${r.orden || '—'}</td>
+      <td style="font-weight:600">${r.cliente_exportador || '—'}</td>
+      <td style="font-size:11px;color:#5f6368">${r.num_fuc || '—'}</td>
+      <td style="font-size:11px;color:#5f6368">${r.num_guia || '—'}</td>
+      <td>${r.variedad || '—'}</td>
+      <td style="max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.productor || ''}">${r.productor || '—'}</td>
+      <td style="text-align:right">${fmtKg(r.kg_recibidos)}</td>
+      <td style="text-align:right">${jabas > 0 ? jabas.toLocaleString('en-US') : '—'}</td>
+      <td>${badge}</td>
+      <td style="text-align:right">${tnP}</td>
+      <td style="text-align:right" class="${r._tnReal ? 'tn-ok' : ''}">${r._tnReal || '—'}</td>
+      <td style="text-align:center">${r._hIni || '—'}</td>
+      <td style="text-align:center">${hFinEfCol}</td>
+      <td style="font-size:11px;color:#7b1fa2;max-width:120px;overflow:hidden;text-overflow:ellipsis" title="${r.obs_calidad||''}">${r.obs_calidad||'—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ─── Countdown ───────────────────────────────────────────────────────
+function startTimer() {
+  clearInterval(tmr);
+  cd = INTERVAL;
+  tick();
+  tmr = setInterval(() => {
+    cd--;
+    tick();
+    if (cd <= 0) { loadData(); cd = INTERVAL; }
+  }, 1000);
+}
+
+function resetTimer() { startTimer(); }
+
+function tick() {
+  const el = document.getElementById('countdown');
+  const pf = document.getElementById('pfill');
+  if (el) el.textContent = cd;
+  if (pf) pf.style.width = (cd / INTERVAL * 100) + '%';
+  // Cambia color del countdown cuando queda poco tiempo
+  if (el) el.style.color = cd <= 3 ? '#ff7043' : '#4fc3f7';
+}
+
+function setError(msg) {
+  const h = `<tr><td class="err-cell" colspan="9">${msg}</td></tr>`;
+  document.getElementById('sum-tbody').innerHTML = h;
+  document.getElementById('det-tbody').innerHTML = `<tr><td class="err-cell" colspan="14">${msg}</td></tr>`;
+}
+
+// ─── Helpers de tiempo ───────────────────────────────────────────────
+function normT(t) {
+  if (!t) return '';
+  const s = String(t);
+  if (/^\d{1,2}:\d{2}/.test(s)) return s.slice(0,5).padStart(5,'0');
+  const m = s.match(/T(\d{2}):(\d{2})/);
+  return m ? `${m[1]}:${m[2]}` : '';
+}
+function diffH(t1, t2) {
+  const p1 = normT(t1), p2 = normT(t2);
+  if (!p1 || !p2) return 0;
+  const [h1,m1] = p1.split(':').map(Number);
+  const [h2,m2] = p2.split(':').map(Number);
+  let d = (h2*60+m2) - (h1*60+m1);
+  if (d <= 0) d += 1440;
+  return d / 60;
+}
+function addMin(timeStr, mins) {
+  const t = normT(timeStr);
+  if (!t) return '';
+  const [h,m] = t.split(':').map(Number);
+  const tot   = h*60 + m + Math.round(mins);
+  return `${String(Math.floor(tot/60)%24).padStart(2,'0')}:${String(tot%60).padStart(2,'0')}`;
+}
+function todayStr() { return new Date().toISOString().slice(0,10); }
+
+// ─── API helper ──────────────────────────────────────────────────────
+async function api(body) {
+  const r = await fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify(body)
+  });
+  return r.json();
+}
+
+// ─── Reiniciar countdown al cambiar filtros ──────────────────────────
+document.addEventListener('change', e => {
+  if (e.target.id === 'f-fecha' || e.target.id === 'f-linea' || e.target.id === 'f-cliente') {
+    loadData(); resetTimer();
+  }
+});
+</script>
+</body>
+</html>
