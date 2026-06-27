@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Indicadores de Proceso — Packing del Carmen SAC</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; background: #f0f2f5; color: #202124; min-height: 100vh; padding-bottom: 16px; }
+
+    /* ── Header ── */
+    .header {
+      background: #1e2a3b; color: #fff;
+      padding: 12px 24px;
+      display: flex; align-items: center; gap: 14px;
+      position: sticky; top: 0; z-index: 100;
+      box-shadow: 0 2px 8px rgba(0,0,0,.3);
+    }
+    .header-text { flex: 1; }
+    .header-brand { font-size: 11px; font-weight: 500; color: rgba(255,255,255,.5); text-transform: uppercase; letter-spacing: .5px; }
+    .header-title { font-size: 15px; font-weight: 700; }
+    .refresh-pill {
+      background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.15);
+      padding: 6px 14px; border-radius: 20px; font-size: 12px;
+      display: flex; align-items: center; gap: 8px; white-space: nowrap;
+    }
+    .countdown-num {
+      font-size: 18px; font-weight: 800; color: #4fc3f7;
+      min-width: 24px; text-align: center; font-variant-numeric: tabular-nums;
+    }
+
+    /* ── Filters ── */
+    .filters {
+      background: #fff; padding: 10px 24px;
+      display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+      border-bottom: 1px solid #e0e0e0;
+      box-shadow: 0 2px 4px rgba(0,0,0,.05);
+    }
+    .fg { display: flex; align-items: center; gap: 7px; }
+    .fg label { font-size: 12px; font-weight: 600; color: #5f6368; white-space: nowrap; }
+    .fi {
+      padding: 6px 10px; border: 1px solid #ddd; border-radius: 6px;
+      font-size: 13px; font-family: inherit; outline: none;
+    }
+    .fi:focus { border-color: #1a73e8; box-shadow: 0 0 0 3px rgba(26,115,232,.1); }
+    .btn-now {
+      background: #1a73e8; color: #fff;
+      border: none; padding: 7px 14px; border-radius: 6px;
+      font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit;
+    }
+    .btn-now:hover { background: #1557b0; }
+    .last-upd { margin-left: auto; font-size: 11px; color: #5f6368; }
+
+    /* ── Content ── */
+    .content { padding: 16px 24px; }
+
+    /* ── Card ── */
+    .card {
+      background: #fff; border-radius: 10px; margin-bottom: 16px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.08); overflow: hidden;
+    }
+    .card-header {
+      padding: 10px 16px; border-bottom: 1px solid #e0e0e0;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .card-title {
+      font-size: 11px; font-weight: 700; color: #5f6368;
+      text-transform: uppercase; letter-spacing: .5px;
+    }
+
+    /* ── Indicators table ── */
+    .ind-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .ind-table th {
+      padding: 9px 12px; font-size: 11px; font-weight: 700; color: #5f6368;
+      border-bottom: 2px solid #e0e0e0; background: #f1f3f4; white-space: nowrap;
+    }
+    .ind-table td {
+      padding: 11px 12px; border-bottom: 1px solid #f1f3f4; text-align: center;
+    }
+    .ind-table td:first-child { text-align: left; font-weight: 600; color: #202124; }
+    .ind-table tbody tr:last-child td { border-bottom: none; }
+    .ind-table tbody tr:nth-child(even) td { background: #fafafa; }
+    .ind-table tbody tr:hover td { background: rgba(26,115,232,.04); }
+
+    .col-dia  { border-left: 2px solid #e8ab00; }
+    .col-sem  { border-left: 2px solid #34a853; }
+    .col-mes  { border-left: 2px solid #8e24aa; }
+
+    .head-dia { background: #fffbe6 !important; color: #b06000 !important; }
+    .head-sem { background: #f0fff4 !important; color: #1e6e3e !important; }
+    .head-mes { background: #fdf5ff !important; color: #6a1b9a !important; }
+
+    .dev-good { font-weight: 700; color: #1e8e3e; background: #f5fbf5; }
+    .dev-bad  { font-weight: 700; color: #d93025; background: #fff5f5; }
+
+    /* ── Chart ── */
+    .chart-wrap { padding: 20px 24px; }
+    .chart-title { font-size: 11px; font-weight: 700; color: #5f6368; letter-spacing: .04em; margin-bottom: 16px; text-transform: uppercase; }
+    .chart-area { position: relative; height: 280px; }
+
+    /* ── Note ── */
+    .obj-note {
+      font-size: 12px; color: #7a5c00;
+      background: #fff8e1; border: 1px solid #fbbc04; border-radius: 6px;
+      padding: 7px 12px;
+    }
+
+    /* ── Progress bar ── */
+    .pbar { position: fixed; bottom: 0; left: 0; width: 100%; height: 4px; background: #e0e0e0; z-index: 200; }
+    .pfill { height: 100%; background: linear-gradient(90deg, #1a73e8, #4fc3f7); transition: width 1s linear; }
+
+    /* ── Empty/Error ── */
+    .empty-cell { text-align: center; padding: 28px; color: #5f6368; font-style: italic; }
+    .err-cell   { text-align: center; padding: 20px; color: #d93025; }
+
+    @media (max-width: 768px) {
+      .header { padding: 10px 14px; }
+      .content { padding: 10px 14px; }
+      .filters { padding: 8px 14px; }
+      .header-title { font-size: 13px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <img src="Logo.jpeg" alt="PDC" style="width:40px;height:40px;object-fit:contain;border-radius:7px;flex-shrink:0;background:#fff;padding:2px">
+  <div class="header-text">
+    <div class="header-brand">Packing del Carmen SAC</div>
+    <div class="header-title">INDICADORES DE PROCESO — EN TIEMPO REAL</div>
+  </div>
+  <div class="refresh-pill">
+    <span style="color:rgba(255,255,255,.6);font-size:11px">Actualiza en</span>
+    <span class="countdown-num" id="countdown">60</span>
+    <span style="color:rgba(255,255,255,.6);font-size:11px">seg</span>
+  </div>
+</header>
+
+<!-- FILTERS -->
+<div class="filters">
+  <div class="fg">
+    <label>Fecha:</label>
+    <input type="date" class="fi" id="f-fecha" onchange="onFilterChange()">
+  </div>
+  <div class="fg">
+    <label>Línea:</label>
+    <select class="fi" id="f-linea" onchange="onFilterChange()">
+      <option value="">Todas</option>
+    </select>
+  </div>
+  <div class="fg">
+    <label>Cultivo:</label>
+    <select class="fi" id="f-cultivo" onchange="onFilterChange()">
+      <option value="">Todos</option>
+    </select>
+  </div>
+  <div class="fg">
+    <label>Proceso:</label>
+    <select class="fi" id="f-proceso" onchange="onFilterChange()">
+      <option value="">Todos</option>
+    </select>
+  </div>
+  <button class="btn-now" onclick="manualRefresh()">↻ Actualizar ahora</button>
+  <div class="last-upd" id="last-upd"></div>
+</div>
+
+<!-- CONTENT -->
+<div class="content">
+
+  <!-- TABLA INDICADORES -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Indicadores de Proceso</span>
+      <span id="obj-note" class="obj-note" style="display:none">
+        ⚠ Selecciona un Proceso para ver los objetivos.
+      </span>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="ind-table">
+        <thead>
+          <tr>
+            <th rowspan="2" style="text-align:left;min-width:150px">INDICADOR</th>
+            <th rowspan="2" style="color:#1a73e8;min-width:110px">OBJETIVO</th>
+            <th colspan="2" class="head-dia col-dia" style="min-width:110px">DÍA</th>
+            <th colspan="2" class="head-sem col-sem" style="min-width:110px">SEMANA</th>
+            <th colspan="2" class="head-mes col-mes" style="min-width:110px">MES</th>
+          </tr>
+          <tr style="background:#fafafa">
+            <th class="col-dia" id="h-dia" style="min-width:120px;font-weight:600">Resultado</th>
+            <th style="font-weight:600">Desviación</th>
+            <th class="col-sem" id="h-sem" style="min-width:120px;font-weight:600">Resultado</th>
+            <th style="font-weight:600">Desviación</th>
+            <th class="col-mes" id="h-mes" style="min-width:120px;font-weight:600">Resultado</th>
+            <th style="font-weight:600">Desviación</th>
+          </tr>
+        </thead>
+        <tbody id="ind-tbody">
+          <tr><td class="empty-cell" colspan="8">Cargando datos...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- GRÁFICO COSTO $/KG -->
+  <div class="card" id="chart-card" style="display:none">
+    <div class="card-header">
+      <span class="card-title">Costo $/Kg — Evolución del Mes</span>
+    </div>
+    <div class="chart-wrap">
+      <div class="chart-area">
+        <canvas id="costo-chart"></canvas>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- PROGRESS BAR -->
+<div class="pbar"><div class="pfill" id="pfill" style="width:100%"></div></div>
+
+<script>
+// ─── CONFIG ──────────────────────────────────────────────────────────
+const API_URL  = 'https://script.google.com/macros/s/AKfycbyRI9S-qVkN6JwUqnvyKXyu0XxtHF1kdhw3BTwH32vcKTR6ybGGlXiTTpup2Ws2Af9w/exec';
+const INTERVAL = 60;
+
+// ─── Estado ──────────────────────────────────────────────────────────
+let cd = INTERVAL, tmr;
+let allData = [], objetivos = [];
+let chartInstance = null;
+
+// ─── Inicio ──────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', async () => {
+  document.getElementById('f-fecha').value = todayStr();
+  await loadAll();
+  startTimer();
+});
+
+async function loadAll() {
+  const [resInd, resObj] = await Promise.all([
+    api({ action: 'getPublicIndicadores' }),
+    api({ action: 'getPublicObjetivos'  })
+  ]);
+  if (resInd.success) allData    = resInd.data || [];
+  if (resObj.success) objetivos  = resObj.data || [];
+  populateFilters();
+  render();
+  document.getElementById('last-upd').textContent =
+    'Última actualización: ' + new Date().toLocaleTimeString('es-PE');
+}
+
+function manualRefresh() { loadAll(); resetTimer(); }
+function onFilterChange() { render(); resetTimer(); }
+
+// ─── Poblar filtros ───────────────────────────────────────────────────
+function populateFilters() {
+  const uniq = f => [...new Set(allData.map(r => r[f]).filter(Boolean))].sort();
+  const fill = (id, vals) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const cur = el.value;
+    el.innerHTML = `<option value="">Todos</option>` +
+      vals.map(v => `<option value="${v}"${v===cur?' selected':''}>${v}</option>`).join('');
+    if (cur && [...el.options].some(o => o.value === cur)) el.value = cur;
+  };
+  fill('f-linea',   uniq('linea'));
+  fill('f-cultivo', uniq('cultivo'));
+  fill('f-proceso', uniq('proceso'));
+}
+
+// ─── Compute helper ───────────────────────────────────────────────────
+function compute(rows, field) {
+  if (!rows.length) return null;
+  const specs = {
+    kg:    { isSum: true,  sumF: 'kilos_procesados_reales' },
+    prod:  { num: 'kilos_exportables_reales', den: 'horas_planilla',          mult: 1     },
+    tnh:   { num: 'kilos_procesados_reales',  den: 'horas_turno',             mult: 0.001 },
+    rend:  { num: 'kilos_exportables_reales', den: 'kilos_procesados_reales', mult: 100   },
+    costo: { num: 'costo_planilla_mod',       den: 'kilos_exportables_reales',mult: 1     },
+  };
+  const s = specs[field];
+  if (!s) return null;
+  if (s.isSum) {
+    const v = rows.reduce((a, r) => a + (parseFloat(r[s.sumF]) || 0), 0);
+    return v > 0 ? v : null;
+  }
+  let sn = 0, sd = 0;
+  rows.forEach(r => {
+    const n = parseFloat(r[s.num]) || 0, d = parseFloat(r[s.den]) || 0;
+    if (d > 0) { sn += n; sd += d; }
+  });
+  return sd > 0 ? (sn / sd) * s.mult : null;
+}
+
+// ─── ISO Week ─────────────────────────────────────────────────────────
+function isoWeek(dateStr) {
+  const d = new Date(dateStr + 'T12:00:00');
+  d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+  const y = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  const wk = Math.ceil((((d - y) / 86400000) + 1) / 7);
+  return d.getUTCFullYear() + '-W' + String(wk).padStart(2, '0');
+}
+
+function norm(s) { return String(s || '').slice(0, 10); }
+
+// ─── Objetivo matching ────────────────────────────────────────────────
+function getObjetivo(proceso, year) {
+  if (!proceso || !objetivos.length) return null;
+  const pr = String(proceso).trim().toLowerCase();
+  const yr = String(year);
+  return objetivos.find(o =>
+    String(o.proceso || '').trim().toLowerCase() === pr &&
+    (!o.anio || String(o.anio) === yr)
+  ) || objetivos.find(o =>
+    String(o.proceso || '').trim().toLowerCase() === pr
+  ) || null;
+}
+
+// ─── Render ───────────────────────────────────────────────────────────
+function render() {
+  const dateVal = document.getElementById('f-fecha').value;
+  const linea   = document.getElementById('f-linea').value;
+  const cultivo = document.getElementById('f-cultivo').value;
+  const proceso = document.getElementById('f-proceso').value;
+  const tbody   = document.getElementById('ind-tbody');
+
+  if (!dateVal) {
+    tbody.innerHTML = '<tr><td class="empty-cell" colspan="8">Selecciona una fecha para ver los indicadores</td></tr>';
+    return;
+  }
+
+  let data = allData;
+  if (linea)   data = data.filter(r => r.linea   === linea);
+  if (cultivo) data = data.filter(r => r.cultivo === cultivo);
+  if (proceso) data = data.filter(r => r.proceso === proceso);
+
+  const selWeek  = isoWeek(dateVal);
+  const selMonth = dateVal.slice(0, 7);
+  const selYear  = dateVal.slice(0, 4);
+
+  const diaData = data.filter(r => norm(r.fecha_proceso) === dateVal);
+  const semData = data.filter(r => isoWeek(r.fecha_proceso) === selWeek);
+  const mesData = data.filter(r => norm(r.fecha_proceso).slice(0, 7) === selMonth);
+
+  // Encabezados de columnas
+  const dt    = new Date(dateVal + 'T12:00:00');
+  const dias  = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+  const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  document.getElementById('h-dia').textContent =
+    dias[dt.getDay()] + ' ' + dateVal.slice(8) + '/' + dateVal.slice(5, 7) + '/' + selYear;
+  document.getElementById('h-sem').textContent =
+    'Sem. ' + selWeek.split('-W')[1] + ' (' + selYear + ')';
+  document.getElementById('h-mes').textContent =
+    meses[parseInt(selMonth.slice(5)) - 1] + ' ' + selYear;
+
+  const objNote = document.getElementById('obj-note');
+  if (objNote) objNote.style.display = !proceso ? '' : 'none';
+
+  const obj = getObjetivo(proceso, selYear);
+
+  const rowDefs = [
+    { label:'Kilos procesados', field:'kg',   objF:null,          noDesv:true,  lower:false,
+      fmt: v => v!=null ? Math.round(v).toLocaleString('es-PE')+' Kg' : '—' },
+    { label:'Productividad',    field:'prod',  objF:'productividad',noDesv:false, lower:false,
+      fmt: v => v!=null ? v.toFixed(1) : '—' },
+    { label:'Ton/h',            field:'tnh',   objF:'tnh',          noDesv:false, lower:false,
+      fmt: v => v!=null ? v.toFixed(2)+' Tn/h' : '—' },
+    { label:'Rendimiento',      field:'rend',  objF:'exportable',   noDesv:false, lower:false,
+      fmt: v => v!=null ? v.toFixed(1)+'%' : '—' },
+    { label:'Costo $/Kg',       field:'costo', objF:'costo',        noDesv:false, lower:true,
+      fmt: v => v!=null ? v.toFixed(4)+' $/Kg' : '—' },
+  ];
+
+  const bL = 'border-left:2px solid #e0e0e0;';
+
+  const devCell = (val, objVal, lower) => {
+    if (val==null || objVal==null || isNaN(objVal) || objVal===0)
+      return `<td style="${bL}text-align:center;color:#bdbdbd">—</td>`;
+    const dev = ((val - objVal) / objVal) * 100;
+    const good = lower ? dev < 0 : dev > 0;
+    const cls  = good ? 'dev-good' : 'dev-bad';
+    return `<td class="${cls}" style="${bL}text-align:center">${dev >= 0 ? '+' : ''}${dev.toFixed(1)}%</td>`;
+  };
+  const emptyDev = `<td style="${bL}text-align:center;color:#bdbdbd">—</td>`;
+
+  const rows = rowDefs.map(row => {
+    const objVal  = row.objF && obj ? parseFloat(obj[row.objF]) : null;
+    const objOk   = objVal != null && !isNaN(objVal);
+    const objDisp = objOk
+      ? `<span style="color:#1a73e8;font-weight:600">${row.fmt(objVal)}</span>`
+      : `<span style="color:#bdbdbd">—</span>`;
+    const vD = compute(diaData, row.field);
+    const vS = compute(semData, row.field);
+    const vM = compute(mesData, row.field);
+    return `<tr>
+      <td>${row.label}</td>
+      <td style="text-align:center">${objDisp}</td>
+      <td style="${bL}text-align:center">${row.fmt(vD)}</td>
+      ${row.noDesv ? emptyDev : devCell(vD, objOk ? objVal : null, row.lower)}
+      <td style="${bL}text-align:center">${row.fmt(vS)}</td>
+      ${row.noDesv ? emptyDev : devCell(vS, objOk ? objVal : null, row.lower)}
+      <td style="${bL}text-align:center">${row.fmt(vM)}</td>
+      ${row.noDesv ? emptyDev : devCell(vM, objOk ? objVal : null, row.lower)}
+    </tr>`;
+  }).join('');
+
+  tbody.innerHTML = rows || '<tr><td class="empty-cell" colspan="8">Sin datos para los filtros seleccionados</td></tr>';
+
+  // Gráfico
+  renderChart(mesData, selMonth, obj);
+}
+
+// ─── Gráfico Costo $/Kg ───────────────────────────────────────────────
+function renderChart(mesData, selMonth, obj) {
+  const card = document.getElementById('chart-card');
+  const canvas = document.getElementById('costo-chart');
+  if (!card || !canvas) return;
+
+  // Agrupar por fecha
+  const byDate = {};
+  mesData.forEach(r => {
+    const f = norm(r.fecha_proceso);
+    if (!f || !f.startsWith(selMonth)) return;
+    if (!byDate[f]) byDate[f] = { num: 0, den: 0 };
+    byDate[f].num += parseFloat(r.costo_planilla_mod)       || 0;
+    byDate[f].den += parseFloat(r.kilos_exportables_reales) || 0;
+  });
+
+  const fechas = Object.keys(byDate).sort();
+  if (!fechas.length) { card.style.display = 'none'; return; }
+  card.style.display = 'block';
+
+  const costos = fechas.map(f => {
+    const d = byDate[f];
+    return d.den > 0 ? +(d.num / d.den).toFixed(4) : null;
+  });
+  const labels = fechas.map(f => f.slice(8) + '/' + f.slice(5, 7));
+
+  const objCosto = obj ? parseFloat(obj.costo) : null;
+  const datasets = [{
+    label: 'Costo $/Kg',
+    data: costos,
+    borderColor: '#d93025',
+    backgroundColor: 'rgba(217,48,37,0.08)',
+    pointBackgroundColor: '#d93025',
+    pointRadius: 4,
+    pointHoverRadius: 6,
+    borderWidth: 2,
+    tension: 0.3,
+    fill: true,
+    spanGaps: true,
+  }];
+
+  if (objCosto && !isNaN(objCosto)) {
+    datasets.push({
+      label: 'Objetivo',
+      data: fechas.map(() => objCosto),
+      borderColor: '#1a73e8',
+      borderWidth: 1.5,
+      borderDash: [6, 4],
+      pointRadius: 0,
+      tension: 0,
+      fill: false,
+    });
+  }
+
+  if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
+
+  chartInstance = new Chart(canvas.getContext('2d'), {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: true, position: 'top', labels: { font: { size: 12 }, boxWidth: 20 } },
+        tooltip: {
+          callbacks: {
+            label: ctx => ctx.parsed.y != null
+              ? ctx.dataset.label + ': ' + ctx.parsed.y.toFixed(4) + ' $/Kg'
+              : '—'
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: '#f1f3f4' },
+          ticks: { font: { size: 11 }, color: '#5f6368' }
+        },
+        y: {
+          grid: { color: '#f1f3f4' },
+          ticks: { font: { size: 11 }, color: '#5f6368', callback: v => v.toFixed(4) },
+          title: { display: true, text: '$/Kg', font: { size: 11 }, color: '#5f6368' }
+        }
+      }
+    }
+  });
+}
+
+// ─── Timer ────────────────────────────────────────────────────────────
+function startTimer() {
+  clearInterval(tmr);
+  cd = INTERVAL;
+  tick();
+  tmr = setInterval(() => {
+    cd--;
+    tick();
+    if (cd <= 0) { loadAll(); cd = INTERVAL; }
+  }, 1000);
+}
+function resetTimer() { startTimer(); }
+
+function tick() {
+  const el = document.getElementById('countdown');
+  const pf = document.getElementById('pfill');
+  if (el) { el.textContent = cd; el.style.color = cd <= 5 ? '#ff7043' : '#4fc3f7'; }
+  if (pf) pf.style.width = (cd / INTERVAL * 100) + '%';
+}
+
+// ─── API ──────────────────────────────────────────────────────────────
+async function api(body) {
+  const r = await fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify(body)
+  });
+  return r.json();
+}
+
+function todayStr() { return new Date().toISOString().slice(0, 10); }
+</script>
+</body>
+</html>
