@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Avance de Línea — Packing del Carmen SAC</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; background: #f0f2f5; color: #202124; min-height: 100vh; }
+
+    .header {
+      background: #1e2a3b; color: #fff;
+      padding: 12px 24px;
+      display: flex; align-items: center; gap: 14px;
+      position: sticky; top: 0; z-index: 100;
+      box-shadow: 0 2px 8px rgba(0,0,0,.3);
+    }
+    .header-logo {
+      width: 36px; height: 36px; background: #1a73e8; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; font-weight: 800; flex-shrink: 0;
+    }
+    .header-text { flex: 1; }
+    .header-brand { font-size: 11px; font-weight: 500; color: rgba(255,255,255,.5); text-transform: uppercase; letter-spacing: .5px; }
+    .header-title { font-size: 15px; font-weight: 700; }
+    .refresh-pill {
+      background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.15);
+      padding: 6px 14px; border-radius: 20px; font-size: 12px;
+      display: flex; align-items: center; gap: 8px; white-space: nowrap;
+    }
+    .countdown-num { font-size: 18px; font-weight: 800; color: #4fc3f7; min-width: 22px; text-align: center; font-variant-numeric: tabular-nums; }
+
+    .filters {
+      background: #fff; padding: 10px 24px;
+      display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+      border-bottom: 1px solid #e0e0e0; box-shadow: 0 2px 4px rgba(0,0,0,.05);
+    }
+    .fg { display: flex; align-items: center; gap: 7px; }
+    .fg label { font-size: 12px; font-weight: 600; color: #5f6368; white-space: nowrap; }
+    .fg select {
+      padding: 6px 10px; border: 1px solid #dadce0; border-radius: 7px;
+      font-size: 13px; font-family: inherit; outline: none; background: #fff;
+    }
+    .fg select:focus { border-color: #1a73e8; }
+    .btn-ref { padding: 6px 14px; border: 1px solid #dadce0; border-radius: 7px; background: #fff; font-size: 13px; cursor: pointer; font-family: inherit; }
+    .btn-ref:hover { background: #f1f3f4; }
+
+    .content { padding: 20px 24px; max-width: 1200px; margin: 0 auto; }
+
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 18px; }
+    .kpi { background: #fff; border: 1px solid #e0e0e0; border-radius: 10px; padding: 14px 16px; }
+    .kpi-label { font-size: 11px; font-weight: 600; color: #5f6368; text-transform: uppercase; }
+    .kpi-val { font-size: 26px; font-weight: 800; margin-top: 4px; }
+
+    .card { background: #fff; border: 1px solid #e0e0e0; border-radius: 10px; padding: 18px; margin-bottom: 16px; }
+    .card-title { font-size: 13px; font-weight: 700; color: #202124; margin-bottom: 14px; }
+    .chart-wrap { position: relative; height: 320px; }
+
+    .tabla-header {
+      background: #f1f3f4; border: 1px solid #e0e0e0; border-bottom: none;
+      border-radius: 10px 10px 0 0; padding: 10px 16px;
+      font-size: 12px; color: #5f6368; display: flex; gap: 20px; flex-wrap: wrap;
+    }
+    .tabla-wrap { background: #fff; border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 10px 10px; overflow: hidden; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 12px; white-space: nowrap; }
+    thead th { background: #1a73e8; color: #fff; padding: 8px 10px; text-align: right; }
+    thead th:nth-child(-n+3) { text-align: left; }
+    tbody td { padding: 7px 10px; text-align: right; border-bottom: 1px solid #f1f3f4; }
+    tbody td:nth-child(-n+3) { text-align: left; }
+    tbody tr:hover { background: #f8f9fa; }
+
+    #empty-msg { text-align: center; padding: 60px 20px; color: #9aa0a6; display: none; }
+    .spinner { width: 32px; height: 32px; border: 3px solid #e0e0e0; border-top-color: #1a73e8; border-radius: 50%; animation: spin .7s linear infinite; margin: 40px auto; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-logo">P</div>
+  <div class="header-text">
+    <div class="header-brand">Packing del Carmen SAC</div>
+    <div class="header-title">Avance de Línea — En vivo</div>
+  </div>
+  <div class="refresh-pill">
+    Auto-refresh en <span class="countdown-num" id="cd">—</span>s
+  </div>
+</div>
+
+<div class="filters">
+  <div class="fg">
+    <label>Fecha</label>
+    <select id="f-fecha" onchange="onFechaChange()">
+      <option value="">— Cargando... —</option>
+    </select>
+  </div>
+  <div class="fg">
+    <label>Línea</label>
+    <select id="f-linea" onchange="onLineaChange()">
+      <option value="">Todas</option>
+    </select>
+  </div>
+  <div class="fg">
+    <label>Turno</label>
+    <select id="f-turno" onchange="loadData()">
+      <option value="">Todos</option>
+    </select>
+  </div>
+  <div class="fg" style="margin-left:auto">
+    <button class="btn-ref" onclick="loadData()">↻ Actualizar</button>
+  </div>
+</div>
+
+<div class="content">
+  <div id="loader" class="spinner"></div>
+
+  <div id="main" style="display:none">
+    <div class="kpi-grid">
+      <div class="kpi"><div class="kpi-label">Total Kilos</div><div class="kpi-val" id="k-kilos" style="color:#1a73e8">—</div></div>
+      <div class="kpi"><div class="kpi-label">TON/H</div><div class="kpi-val" id="k-tnh" style="color:#6a1b9a">—</div></div>
+      <div class="kpi"><div class="kpi-label">Total Tiempo</div><div class="kpi-val" id="k-tiempo" style="color:#2e7d32">—</div></div>
+      <div class="kpi"><div class="kpi-label">Bloques</div><div class="kpi-val" id="k-bloques" style="color:#5f6368">—</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📊 Kilos procesados por hora</div>
+      <div class="chart-wrap"><canvas id="chart"></canvas></div>
+    </div>
+
+    <div class="tabla-header" id="tabla-header"></div>
+    <div class="tabla-wrap">
+      <div style="overflow-x:auto;max-height:420px">
+        <table>
+          <thead>
+            <tr>
+              <th style="text-align:left">Orden</th>
+              <th style="text-align:left">Hora Ini</th>
+              <th style="text-align:left">Hora Fin</th>
+              <th>Tiempo (h)</th>
+              <th>Kilos</th>
+              <th>TON/H</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="empty-msg">📊<br><br>Selecciona fecha y línea para ver el avance</div>
+</div>
+
+<script>
+// ─── CONFIG ──────────────────────────────────────────────────────────
+const API_URL  = 'https://script.google.com/macros/s/AKfycbyRI9S-qVkN6JwUqnvyKXyu0XxtHF1kdhw3BTwH32vcKTR6ybGGlXiTTpup2Ws2Af9w/exec';
+const INTERVAL = 300; // segundos
+
+let cd = INTERVAL, tmr, _chart = null, _data = [];
+
+// ─── Inicio ──────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', async () => {
+  const p = new URLSearchParams(location.search);
+  await loadFechas(p.get('fecha') || '', p.get('linea') || '', p.get('turno') || '');
+  startCountdown();
+});
+
+function startCountdown() {
+  clearInterval(tmr); cd = INTERVAL;
+  document.getElementById('cd').textContent = cd;
+  tmr = setInterval(() => {
+    cd--; document.getElementById('cd').textContent = cd;
+    if (cd <= 0) { cd = INTERVAL; loadData(); }
+  }, 1000);
+}
+
+async function api(body) {
+  const r = await fetch(API_URL, { method:'POST', headers:{'Content-Type':'text/plain'}, body: JSON.stringify(body) });
+  return r.json();
+}
+
+// ─── Carga de selectores ──────────────────────────────────────────────
+async function loadFechas(selFecha, selLinea, selTurno) {
+  show('loader');
+  const res = await api({ action: 'getPublicAvanceLinea', fecha: '', linea: '', turno: '' });
+  if (!res.success) { show('empty'); return; }
+
+  const fechas = res.fechas || [];
+  const fSel   = document.getElementById('f-fecha');
+  fSel.innerHTML = '<option value="">— Fecha —</option>'
+    + fechas.map(f => `<option value="${f}" ${f===selFecha?'selected':''}>${f}</option>`).join('');
+  if (!selFecha && fechas.length) { fSel.value = fechas[0]; selFecha = fechas[0]; }
+
+  await loadLineas(selFecha, selLinea, selTurno);
+}
+
+async function onFechaChange() {
+  const fecha = document.getElementById('f-fecha').value;
+  fillSel('f-linea', [], 'Todas', '');
+  fillSel('f-turno', [], 'Todos', '');
+  await loadLineas(fecha, '', '');
+}
+
+async function onLineaChange() {
+  const fecha = document.getElementById('f-fecha').value;
+  const linea = document.getElementById('f-linea').value;
+  fillSel('f-turno', [], 'Todos', '');
+  await loadTurnos(fecha, linea, '');
+  await loadData();
+}
+
+async function loadLineas(fecha, selLinea, selTurno) {
+  const res = await api({ action: 'getPublicAvanceLinea', fecha, linea: '', turno: '' });
+  fillSel('f-linea', res.success ? res.lineas : [], 'Todas', selLinea);
+  const linea = document.getElementById('f-linea').value;
+  await loadTurnos(fecha, linea, selTurno);
+  await loadData();
+}
+
+async function loadTurnos(fecha, linea, selTurno) {
+  const res = await api({ action: 'getPublicAvanceLinea', fecha, linea, turno: '' });
+  fillSel('f-turno', res.success ? res.turnos : [], 'Todos', selTurno);
+}
+
+function fillSel(id, items, placeholder, cur) {
+  document.getElementById(id).innerHTML =
+    `<option value="">${placeholder}</option>`
+    + (items||[]).map(v => `<option value="${v}" ${v===cur?'selected':''}>${v}</option>`).join('');
+}
+
+// ─── Cargar data ──────────────────────────────────────────────────────
+async function loadData() {
+  const fecha = document.getElementById('f-fecha').value;
+  const linea = document.getElementById('f-linea').value;
+  const turno = document.getElementById('f-turno').value;
+  show('loader');
+  const res = await api({ action: 'getPublicAvanceLinea', fecha, linea, turno });
+  if (!res.success || !res.data || !res.data.length) { show('empty'); return; }
+  _data = res.data;
+  show('main');
+  renderStats(); renderChart(); renderTablaHeader(); renderTable();
+  startCountdown();
+
+  const url = new URL(location.href);
+  if (fecha) url.searchParams.set('fecha', fecha); else url.searchParams.delete('fecha');
+  if (linea) url.searchParams.set('linea', linea); else url.searchParams.delete('linea');
+  if (turno) url.searchParams.set('turno', turno); else url.searchParams.delete('turno');
+  history.replaceState({}, '', url.toString());
+}
+
+// ─── Stats ────────────────────────────────────────────────────────────
+function renderStats() {
+  const totKilos  = _data.reduce((s,r) => s + r.kilos, 0);
+  const totTiempo = _data.reduce((s,r) => s + r.tiempo, 0);
+  const tnh = totTiempo > 0 ? (totKilos / totTiempo / 1000).toFixed(2) : '—';
+  document.getElementById('k-kilos').textContent  = totKilos.toLocaleString('es-PE') + ' kg';
+  document.getElementById('k-tnh').textContent    = tnh + ' ton/h';
+  document.getElementById('k-tiempo').textContent = totTiempo.toFixed(1) + ' h';
+  document.getElementById('k-bloques').textContent= _data.length;
+}
+
+// ─── Gráfico ──────────────────────────────────────────────────────────
+function renderChart() {
+  const labels = _data.map(r => r.hora_inicio || ('O' + r.orden));
+  const kilos  = _data.map(r => r.kilos);
+  if (_chart) { _chart.destroy(); _chart = null; }
+  const ctx = document.getElementById('chart').getContext('2d');
+  _chart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Kilos procesados',
+        data: kilos,
+        backgroundColor: 'rgba(26,115,232,0.75)',
+        borderRadius: 5,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            afterBody(ctx) {
+              const r = _data[ctx[0].dataIndex];
+              return ['TON/H: ' + r.tnh, 'Tiempo: ' + r.tiempo + 'h'];
+            }
+          }
+        }
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+        y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.06)' },
+             ticks: { callback: v => v.toLocaleString('es-PE') } }
+      }
+    }
+  });
+}
+
+// ─── Encabezado contextual ────────────────────────────────────────────
+function renderTablaHeader() {
+  const uniq = f => [...new Set(_data.map(r => r[f]).filter(Boolean))].join(', ');
+  document.getElementById('tabla-header').innerHTML =
+    `<span><b>Línea:</b> ${uniq('linea')||'—'}</span>
+     <span><b>Cultivo:</b> ${uniq('cultivo')||'—'}</span>
+     <span><b>Turno:</b> ${uniq('turno')||'—'}</span>
+     <span><b>Packing:</b> ${uniq('packing')||'—'}</span>`;
+}
+
+// ─── Tabla ────────────────────────────────────────────────────────────
+function renderTable() {
+  document.getElementById('tbody').innerHTML = _data.map(r =>
+    `<tr>
+      <td>${r.orden}</td>
+      <td>${r.hora_inicio}</td>
+      <td>${r.hora_fin}</td>
+      <td>${r.tiempo}</td>
+      <td style="font-weight:600">${r.kilos.toLocaleString('es-PE')}</td>
+      <td style="color:#6a1b9a;font-weight:600">${r.tnh}</td>
+    </tr>`
+  ).join('');
+}
+
+function show(s) {
+  document.getElementById('loader').style.display    = s==='loader' ? 'block' : 'none';
+  document.getElementById('main').style.display      = s==='main'   ? 'block' : 'none';
+  document.getElementById('empty-msg').style.display = s==='empty'  ? 'block' : 'none';
+}
+</script>
+</body>
+</html>
