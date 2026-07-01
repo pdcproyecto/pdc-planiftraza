@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Avance de Línea — Packing del Carmen SAC</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; background: #f0f2f5; color: #202124; min-height: 100vh; }
+
+    .header {
+      background: #1e2a3b; color: #fff;
+      padding: 12px 24px;
+      display: flex; align-items: center; gap: 14px;
+      position: sticky; top: 0; z-index: 100;
+      box-shadow: 0 2px 8px rgba(0,0,0,.3);
+    }
+    .header-logo {
+      width: 36px; height: 36px; background: #1a73e8; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; font-weight: 800; flex-shrink: 0;
+    }
+    .header-text { flex: 1; }
+    .header-brand { font-size: 11px; font-weight: 500; color: rgba(255,255,255,.5); text-transform: uppercase; letter-spacing: .5px; }
+    .header-title { font-size: 15px; font-weight: 700; }
+    .refresh-pill {
+      background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.15);
+      padding: 6px 14px; border-radius: 20px; font-size: 12px;
+      display: flex; align-items: center; gap: 8px; white-space: nowrap;
+    }
+    .countdown-num { font-size: 18px; font-weight: 800; color: #4fc3f7; min-width: 22px; text-align: center; font-variant-numeric: tabular-nums; }
+
+    .filters {
+      background: #fff; padding: 10px 24px;
+      display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+      border-bottom: 1px solid #e0e0e0; box-shadow: 0 2px 4px rgba(0,0,0,.05);
+    }
+    .fg { display: flex; align-items: center; gap: 7px; }
+    .fg label { font-size: 12px; font-weight: 600; color: #5f6368; white-space: nowrap; }
+    .fg select, .fg input {
+      padding: 6px 10px; border: 1px solid #dadce0; border-radius: 7px;
+      font-size: 13px; font-family: inherit; outline: none; background: #fff;
+    }
+    .fg select:focus, .fg input:focus { border-color: #1a73e8; }
+
+    .content { padding: 20px 24px; max-width: 1200px; margin: 0 auto; }
+
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 18px; }
+    .kpi {
+      background: #fff; border: 1px solid #e0e0e0; border-radius: 10px;
+      padding: 14px 16px; text-align: center;
+    }
+    .kpi-label { font-size: 11px; font-weight: 600; color: #5f6368; text-transform: uppercase; }
+    .kpi-val { font-size: 26px; font-weight: 800; margin-top: 4px; }
+
+    .card {
+      background: #fff; border: 1px solid #e0e0e0; border-radius: 10px;
+      padding: 18px; margin-bottom: 16px;
+    }
+    .card-title { font-size: 13px; font-weight: 700; color: #202124; margin-bottom: 14px; }
+
+    .chart-wrap { position: relative; height: 320px; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 12px; white-space: nowrap; }
+    thead th { background: #1a73e8; color: #fff; padding: 8px 10px; text-align: right; }
+    thead th:first-child { text-align: left; }
+    tbody td { padding: 7px 10px; text-align: right; border-bottom: 1px solid #f1f3f4; }
+    tbody td:first-child { text-align: left; }
+    tbody tr:hover { background: #f8f9fa; }
+
+    .badge {
+      display: inline-block; padding: 2px 8px; border-radius: 20px;
+      font-size: 11px; font-weight: 700;
+    }
+    .badge-ok  { background: #e8f5e9; color: #2e7d32; }
+    .badge-warn{ background: #fff3e0; color: #e65100; }
+    .badge-err { background: #ffebee; color: #c62828; }
+
+    #empty-msg { text-align: center; padding: 60px 20px; color: #9aa0a6; display: none; }
+    #empty-msg i { font-size: 40px; display: block; margin-bottom: 12px; }
+
+    .spinner { width: 32px; height: 32px; border: 3px solid #e0e0e0; border-top-color: #1a73e8; border-radius: 50%; animation: spin .7s linear infinite; margin: 40px auto; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-logo">P</div>
+  <div class="header-text">
+    <div class="header-brand">Packing del Carmen SAC</div>
+    <div class="header-title">Avance de Línea — En vivo</div>
+  </div>
+  <div class="refresh-pill">
+    Auto-refresh en <span class="countdown-num" id="cd">—</span>s
+  </div>
+</div>
+
+<div class="filters">
+  <div class="fg">
+    <label>Fecha</label>
+    <select id="f-fecha" onchange="onFechaChange()">
+      <option value="">— Cargando... —</option>
+    </select>
+  </div>
+  <div class="fg">
+    <label>Línea</label>
+    <select id="f-linea" onchange="loadData()">
+      <option value="">Todas</option>
+    </select>
+  </div>
+  <div class="fg" style="margin-left:auto">
+    <button onclick="loadData()" style="padding:6px 14px;border:1px solid #dadce0;border-radius:7px;background:#fff;font-size:13px;cursor:pointer;font-family:inherit">
+      ↻ Actualizar
+    </button>
+  </div>
+</div>
+
+<div class="content">
+  <div id="loader" class="spinner"></div>
+
+  <div id="main" style="display:none">
+    <div class="kpi-grid">
+      <div class="kpi"><div class="kpi-label">Total Kilos</div><div class="kpi-val" id="k-kilos" style="color:#1a73e8">—</div></div>
+      <div class="kpi"><div class="kpi-label">Objetivo Total</div><div class="kpi-val" id="k-obj" style="color:#e65100">—</div></div>
+      <div class="kpi"><div class="kpi-label">Eficiencia</div><div class="kpi-val" id="k-eff">—</div></div>
+      <div class="kpi"><div class="kpi-label">Kg/h Prom.</div><div class="kpi-val" id="k-rate" style="color:#6a1b9a">—</div></div>
+      <div class="kpi"><div class="kpi-label">Bloques</div><div class="kpi-val" id="k-bloques" style="color:#5f6368">—</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📊 Kilos procesados por hora — barras: real &nbsp;·&nbsp; línea: objetivo</div>
+      <div class="chart-wrap"><canvas id="chart"></canvas></div>
+    </div>
+
+    <div class="card" style="padding:0">
+      <div style="padding:14px 18px;border-bottom:1px solid #f1f3f4;font-size:13px;font-weight:700">📋 Detalle por bloque</div>
+      <div style="overflow-x:auto;max-height:400px">
+        <table>
+          <thead>
+            <tr>
+              <th style="text-align:left">Orden</th>
+              <th style="text-align:left">Hora Ini</th>
+              <th style="text-align:left">Hora Fin</th>
+              <th>Tiempo(h)</th>
+              <th>Kilos</th>
+              <th>Objetivo</th>
+              <th>Kg/h</th>
+              <th>Efic.%</th>
+              <th style="text-align:left">Línea</th>
+              <th style="text-align:left">Cultivo</th>
+              <th style="text-align:left">Turno</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="empty-msg">
+    📊<br>Selecciona fecha y línea para ver el avance
+  </div>
+</div>
+
+<script>
+// ─── CONFIG ──────────────────────────────────────────────────────────
+const API_URL  = 'https://script.google.com/macros/s/AKfycbyRI9S-qVkN6JwUqnvyKXyu0XxtHF1kdhw3BTwH32vcKTR6ybGGlXiTTpup2Ws2Af9w/exec';
+const INTERVAL = 300; // 5 minutos
+
+// ─── Estado ──────────────────────────────────────────────────────────
+let cd = INTERVAL;
+let tmr;
+let _chart = null;
+let _data  = [];
+
+// ─── Inicio ──────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', async () => {
+  // Leer params de URL
+  const p     = new URLSearchParams(location.search);
+  const fecha = p.get('fecha') || '';
+  const linea = p.get('linea') || '';
+
+  await loadFechas(fecha, linea);
+  startCountdown();
+});
+
+// ─── Countdown ───────────────────────────────────────────────────────
+function startCountdown() {
+  clearInterval(tmr);
+  cd = INTERVAL;
+  document.getElementById('cd').textContent = cd;
+  tmr = setInterval(() => {
+    cd--;
+    document.getElementById('cd').textContent = cd;
+    if (cd <= 0) { cd = INTERVAL; loadData(); }
+  }, 1000);
+}
+
+// ─── API helper ──────────────────────────────────────────────────────
+async function api(body) {
+  const r = await fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify(body)
+  });
+  return r.json();
+}
+
+// ─── Cargar fechas disponibles ────────────────────────────────────────
+async function loadFechas(selectFecha, selectLinea) {
+  show('loader');
+  const res = await api({ action: 'getPublicAvanceLinea', fecha: '', linea: '' });
+  if (!res.success) { show('empty'); return; }
+
+  const fechas = res.fechas || [];
+  const fSel   = document.getElementById('f-fecha');
+  fSel.innerHTML = '<option value="">— Fecha —</option>'
+    + fechas.map(f => `<option value="${f}" ${f===selectFecha?'selected':''}>${f}</option>`).join('');
+
+  // Fecha seleccionada
+  const fecha = selectFecha || (fechas.length ? fechas[0] : '');
+  if (fecha) fSel.value = fecha;
+
+  await loadLineasPara(fecha, selectLinea);
+  await loadData();
+}
+
+async function onFechaChange() {
+  const fecha = document.getElementById('f-fecha').value;
+  await loadLineasPara(fecha, '');
+  await loadData();
+}
+
+async function loadLineasPara(fecha, selectLinea) {
+  const res = await api({ action: 'getPublicAvanceLinea', fecha, linea: '' });
+  const lineas = (res.success ? res.lineas : []) || [];
+  const lSel   = document.getElementById('f-linea');
+  lSel.innerHTML = '<option value="">Todas</option>'
+    + lineas.map(l => `<option value="${l}" ${l===selectLinea?'selected':''}>${l}</option>`).join('');
+}
+
+// ─── Cargar data ──────────────────────────────────────────────────────
+async function loadData() {
+  const fecha = document.getElementById('f-fecha').value;
+  const linea = document.getElementById('f-linea').value;
+  show('loader');
+  const res = await api({ action: 'getPublicAvanceLinea', fecha, linea });
+  if (!res.success || !res.data || !res.data.length) { show('empty'); return; }
+  _data = res.data;
+  show('main');
+  renderStats();
+  renderChart();
+  renderTable();
+  startCountdown();
+
+  // Actualizar URL sin recargar
+  const url = new URL(location.href);
+  if (fecha) url.searchParams.set('fecha', fecha); else url.searchParams.delete('fecha');
+  if (linea) url.searchParams.set('linea', linea); else url.searchParams.delete('linea');
+  history.replaceState({}, '', url.toString());
+}
+
+// ─── Stats ────────────────────────────────────────────────────────────
+function renderStats() {
+  const tot  = _data.reduce((s, r) => s + r.kilos, 0);
+  const obj  = _data.reduce((s, r) => s + r.objetivo, 0);
+  const eff  = obj > 0 ? Math.round((tot / obj) * 100) : 0;
+  const rates = _data.filter(r => r.rate > 0).map(r => r.rate);
+  const avgR  = rates.length ? Math.round(rates.reduce((a,b)=>a+b,0)/rates.length) : 0;
+
+  document.getElementById('k-kilos').textContent   = fmt(tot) + ' kg';
+  document.getElementById('k-obj').textContent     = fmt(obj) + ' kg';
+  document.getElementById('k-eff').textContent     = eff + '%';
+  document.getElementById('k-eff').style.color     = eff >= 100 ? '#2e7d32' : eff >= 80 ? '#f57c00' : '#c62828';
+  document.getElementById('k-rate').textContent    = avgR + ' kg/h';
+  document.getElementById('k-bloques').textContent = _data.length;
+}
+
+// ─── Gráfico ──────────────────────────────────────────────────────────
+function renderChart() {
+  const labels = _data.map(r => r.hora_inicio || ('O' + r.orden));
+  const kilos  = _data.map(r => r.kilos);
+  const obj    = _data.map(r => r.objetivo);
+
+  if (_chart) { _chart.destroy(); _chart = null; }
+  const ctx = document.getElementById('chart').getContext('2d');
+  _chart = new Chart(ctx, {
+    data: {
+      labels,
+      datasets: [
+        {
+          type: 'bar',
+          label: 'Kilos procesados',
+          data: kilos,
+          backgroundColor: kilos.map((k, i) =>
+            obj[i] > 0 ? (k >= obj[i] ? 'rgba(46,125,50,0.75)' : 'rgba(26,115,232,0.75)') : 'rgba(26,115,232,0.75)'
+          ),
+          borderRadius: 5,
+          order: 2,
+        },
+        {
+          type: 'line',
+          label: 'Objetivo',
+          data: obj,
+          borderColor: '#e65100',
+          borderWidth: 2.5,
+          borderDash: [6, 4],
+          pointRadius: 4,
+          pointBackgroundColor: '#e65100',
+          fill: false,
+          tension: 0,
+          order: 1,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { position: 'top', labels: { font: { size: 12 } } },
+        tooltip: {
+          callbacks: {
+            afterBody(ctx) {
+              const row = _data[ctx[0].dataIndex];
+              return ['Kg/h: ' + row.rate, 'Tiempo: ' + row.tiempo + 'h'];
+            }
+          }
+        }
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+        y: {
+          beginAtZero: true,
+          grid: { color: 'rgba(0,0,0,0.06)' },
+          ticks: { callback: v => v.toLocaleString('es-PE') }
+        }
+      }
+    }
+  });
+}
+
+// ─── Tabla ────────────────────────────────────────────────────────────
+function renderTable() {
+  document.getElementById('tbody').innerHTML = _data.map(r => {
+    const eff   = r.objetivo > 0 ? Math.round((r.kilos / r.objetivo) * 100) : null;
+    const badge = eff === null ? '' : eff >= 100
+      ? `<span class="badge badge-ok">${eff}%</span>`
+      : eff >= 80
+        ? `<span class="badge badge-warn">${eff}%</span>`
+        : `<span class="badge badge-err">${eff}%</span>`;
+    return `<tr>
+      <td>${r.orden}</td>
+      <td>${r.hora_inicio}</td>
+      <td>${r.hora_fin}</td>
+      <td>${r.tiempo}</td>
+      <td style="font-weight:600">${fmt(r.kilos)}</td>
+      <td style="color:#e65100">${fmt(r.objetivo)}</td>
+      <td style="color:#6a1b9a">${r.rate}</td>
+      <td>${badge || '—'}</td>
+      <td>${r.linea}</td>
+      <td>${r.cultivo}</td>
+      <td>${r.turno}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ─── Helpers ─────────────────────────────────────────────────────────
+function fmt(n) { return Number(n).toLocaleString('es-PE'); }
+
+function show(section) {
+  document.getElementById('loader').style.display   = section === 'loader' ? 'block' : 'none';
+  document.getElementById('main').style.display     = section === 'main'   ? 'block' : 'none';
+  document.getElementById('empty-msg').style.display= section === 'empty'  ? 'block' : 'none';
+}
+</script>
+</body>
+</html>
