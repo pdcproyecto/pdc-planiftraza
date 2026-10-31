@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Visor Proceso — Packing del Carmen</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:100%;height:100%;overflow:hidden;background:#060f1e;font-family:'Segoe UI',Arial,sans-serif}
+
+  /* ── TOP BAR ── */
+  #topbar{
+    position:fixed;top:0;left:0;right:0;height:52px;
+    background:linear-gradient(90deg,#081830 0%,#0d2347 100%);
+    border-bottom:2px solid #1a73e8;
+    display:flex;align-items:center;padding:0 20px;gap:16px;z-index:100
+  }
+  #tb-logo{width:32px;height:32px;background:#1a73e8;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#fff;flex-shrink:0}
+  #tb-brand{font-size:14px;font-weight:700;color:#fff;letter-spacing:.5px}
+  #tb-cultivo{font-size:12px;color:#7ab4f5;margin-left:4px}
+  #tb-spacer{flex:1}
+  #tb-semana{font-size:11px;color:#7ab4f5;margin-right:12px}
+  #tb-time{font-size:22px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums;min-width:90px;text-align:right}
+
+  /* ── MAIN CONTENT ── */
+  #main{position:fixed;top:52px;left:0;right:0;bottom:44px;overflow:hidden}
+
+  /* ── SLIDES ── */
+  .slide{display:none;width:100%;height:100%;padding:16px 20px}
+  .slide.active{display:flex;flex-direction:column}
+
+  /* ── SLIDE TITLE ── */
+  .slide-title{
+    font-size:15px;font-weight:700;color:#7ab4f5;text-transform:uppercase;letter-spacing:1px;
+    margin-bottom:12px;display:flex;align-items:center;gap:8px;flex-shrink:0
+  }
+  .slide-title .icon{font-size:18px}
+
+  /* ── CARDS GRID ── */
+  .kpi-grid{display:grid;gap:12px;flex:1}
+  .kpi-card{
+    background:#0d1e36;border:1px solid #1a3a5c;border-radius:10px;
+    padding:14px 16px;display:flex;flex-direction:column;justify-content:space-between
+  }
+  .kpi-label{font-size:11px;color:#7ab4f5;font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+  .kpi-val{font-size:36px;font-weight:800;color:#fff;line-height:1;font-variant-numeric:tabular-nums}
+  .kpi-val.big{font-size:46px}
+  .kpi-sub{font-size:12px;color:#aac8e8;margin-top:4px}
+  .kpi-good{color:#4caf50}
+  .kpi-warn{color:#ff9800}
+  .kpi-bad{color:#ef5350}
+
+  /* ── TABLE ── */
+  .slide-table{width:100%;border-collapse:collapse;font-size:13px;flex:1}
+  .slide-table th{
+    background:#0d2347;color:#7ab4f5;font-weight:600;text-align:left;
+    padding:8px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.4px;
+    border-bottom:1px solid #1a3a5c
+  }
+  .slide-table td{
+    padding:9px 10px;color:#d0e4f7;border-bottom:1px solid #0d2347;
+    vertical-align:middle
+  }
+  .slide-table tr:last-child td{border-bottom:none}
+  .slide-table tbody tr:hover{background:rgba(26,115,232,.07)}
+
+  /* Status badges */
+  .badge{
+    display:inline-block;padding:3px 9px;border-radius:20px;
+    font-size:10px;font-weight:700;letter-spacing:.3px;text-transform:uppercase
+  }
+  .badge-green{background:#1b5e20;color:#a5d6a7}
+  .badge-orange{background:#e65100;color:#ffe0b2}
+  .badge-blue{background:#0d47a1;color:#90caf9}
+  .badge-gray{background:#263238;color:#90a4ae}
+
+  /* ── PROGRESS BAR ── */
+  #progress-bar-wrap{
+    position:fixed;bottom:0;left:0;right:0;height:44px;
+    background:#060f1e;border-top:1px solid #0d2347;
+    display:flex;align-items:center;padding:0 20px;gap:12px
+  }
+  #slide-dots{display:flex;gap:6px;align-items:center}
+  .dot{
+    width:8px;height:8px;border-radius:50%;background:#1a3a5c;transition:background .3s
+  }
+  .dot.active{background:#1a73e8;width:24px;border-radius:4px}
+  #progress-bar-outer{flex:1;height:4px;background:#0d2347;border-radius:2px;overflow:hidden}
+  #progress-bar-inner{height:100%;background:#1a73e8;border-radius:2px;width:0%;transition:width linear}
+  #progress-label{font-size:11px;color:#7ab4f5;min-width:60px;text-align:right}
+
+  /* ── VIDEO SLIDE ── */
+  #video-slide{display:none;width:100%;height:100%}
+  #video-slide video{width:100%;height:100%;object-fit:contain;background:#000}
+
+  /* ── LOADING ── */
+  #loading-screen{
+    position:fixed;inset:0;background:#060f1e;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:14px;z-index:999
+  }
+  .spinner-ring{
+    width:48px;height:48px;border:4px solid #1a3a5c;border-top-color:#1a73e8;
+    border-radius:50%;animation:spin 1s linear infinite
+  }
+  @keyframes spin{to{transform:rotate(360deg)}}
+  #loading-screen p{color:#7ab4f5;font-size:13px}
+
+  /* ── BAR CHART (volumen) ── */
+  .bar-chart-wrap{display:flex;align-items:flex-end;gap:20px;flex:1;padding-bottom:8px}
+  .bar-group{display:flex;flex-direction:column;align-items:center;flex:1;height:100%}
+  .bar-group-label{font-size:11px;color:#7ab4f5;font-weight:600;margin-bottom:8px;text-transform:uppercase;letter-spacing:.4px}
+  .bar-pair{display:flex;align-items:flex-end;gap:8px;flex:1;width:100%;justify-content:center}
+  .bar-item{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;max-width:80px}
+  .bar-fill{width:100%;border-radius:6px 6px 0 0;min-height:4px;transition:height .5s}
+  .bar-val{font-size:13px;font-weight:700;color:#fff}
+  .bar-sub{font-size:10px;color:#7ab4f5;text-align:center}
+  .bar-axis{width:100%;height:1px;background:#1a3a5c;margin-top:4px}
+
+  /* No data */
+  .no-data{display:flex;flex:1;align-items:center;justify-content:center;color:#3a5a7a;font-size:14px}
+
+  /* Turno header row */
+  .turno-header td{
+    background:#0a1b33;color:#7ab4f5;font-weight:700;font-size:11px;
+    text-transform:uppercase;letter-spacing:.5px;padding:6px 10px
+  }
+</style>
+</head>
+<body>
+
+<div id="loading-screen">
+  <div class="spinner-ring"></div>
+  <p>Cargando visor…</p>
+</div>
+
+<!-- TOP BAR -->
+<div id="topbar">
+  <div id="tb-logo">P</div>
+  <div>
+    <div id="tb-brand">PACKING DEL CARMEN</div>
+    <div id="tb-cultivo">Cargando…</div>
+  </div>
+  <div id="tb-spacer"></div>
+  <div id="tb-semana"></div>
+  <div id="tb-time">00:00</div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div id="main">
+
+  <!-- SLIDE: PRODUCTIVIDAD -->
+  <div class="slide" id="slide-productividad">
+    <div class="slide-title"><span class="icon">📊</span>Productividad del Día</div>
+    <div id="prod-content" style="flex:1;display:flex;flex-direction:column"></div>
+  </div>
+
+  <!-- SLIDE: VOLUMEN VS OBJETIVO -->
+  <div class="slide" id="slide-volumen">
+    <div class="slide-title"><span class="icon">📦</span>Volumen Procesado vs Objetivo — Semana Actual</div>
+    <div id="vol-content" style="flex:1;display:flex;gap:16px"></div>
+  </div>
+
+  <!-- SLIDE: SEGUIMIENTO -->
+  <div class="slide" id="slide-seguimiento">
+    <div class="slide-title"><span class="icon">🔄</span>Seguimiento de Procesos en Curso</div>
+    <div style="flex:1;overflow:hidden">
+      <table class="slide-table">
+        <thead>
+          <tr>
+            <th>Línea</th><th>Turno</th><th>Cultivo</th><th>Proceso</th>
+            <th>Lote</th><th>Kg Recibidos</th><th>Tn/h Proy.</th><th>Tn/h Real</th>
+            <th>Inicio</th><th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="seg-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- SLIDE: VIDEO -->
+  <div class="slide" id="slide-video" style="padding:0">
+    <video id="kiosk-video" autoplay muted playsinline></video>
+  </div>
+
+</div>
+
+<!-- PROGRESS BAR -->
+<div id="progress-bar-wrap">
+  <div id="slide-dots"></div>
+  <div id="progress-bar-outer"><div id="progress-bar-inner"></div></div>
+  <div id="progress-label">—</div>
+</div>
+
+<script>
+// ============================================================
+// VISOR PROCESO — KIOSK
+// ============================================================
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbyRI9S-qVkN6JwUqnvyKXyu0XxtHF1kdhw3BTwH32vcKTR6ybGGlXiTTpup2Ws2Af9w/exec';
+
+// Parámetros de URL
+const URL_PARAMS = new URLSearchParams(window.location.search);
+const CULTIVO_PARAM = URL_PARAMS.get('cultivo') || 'TODOS';
+
+// Estado global
+let _config  = {};
+let _data    = {};
+let _slides  = [];        // slides resueltos: [{tipo, duracion, videoUrl}]
+let _current = 0;        // índice actual en _slides
+let _timer   = null;     // setInterval del carrusel
+let _progress= null;     // setInterval del progress bar
+let _loaded  = false;
+
+// ── UTILIDADES ──────────────────────────────────────────────
+function fmt(n, dec=1){
+  if (n == null || isNaN(n)) return '—';
+  return Number(n).toLocaleString('es-PE',{minimumFractionDigits:dec,maximumFractionDigits:dec});
+}
+function fmtInt(n){ return n==null||isNaN(n)?'—':Math.round(n).toLocaleString('es-PE'); }
+function fmtPct(n){ return n==null||isNaN(n)?'—':fmt(n,1)+'%'; }
+function fmtHora(h){ return h ? String(h).slice(0,5) : '—'; }
+
+function getISOWeek(d){
+  const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  date.setUTCDate(date.getUTCDate() + 4 - (date.getUTCDay() || 7));
+  const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+  return Math.ceil(((date - yearStart) / 86400000 + 1) / 7);
+}
+
+// ── RELOJ ────────────────────────────────────────────────────
+function tickClock(){
+  const now = new Date();
+  const hh  = String(now.getHours()).padStart(2,'0');
+  const mm  = String(now.getMinutes()).padStart(2,'0');
+  document.getElementById('tb-time').textContent = hh + ':' + mm;
+}
+setInterval(tickClock, 1000);
+tickClock();
+
+// ── CARGA DE DATOS ───────────────────────────────────────────
+async function fetchData(){
+  try {
+    const url = GAS_URL + '?visor=proceso&cultivo=' + encodeURIComponent(CULTIVO_PARAM);
+    const r   = await fetch(url);
+    const json = await r.json();
+    if (!json.ok && !json.success) throw new Error('API error');
+    return json;
+  } catch(e) {
+    console.warn('fetchData error:', e);
+    return null;
+  }
+}
+
+async function loadAndRefresh(){
+  const raw = await fetchData();
+  if (!raw) return;
+
+  if (!_loaded) {
+    // Primera carga: inicializar config y carrusel
+    _config = raw.config || {};
+    const cultivo = _config.cultivo || CULTIVO_PARAM;
+    document.getElementById('tb-cultivo').textContent = cultivo === 'TODOS' ? 'Todos los cultivos' : cultivo;
+
+    const week = getISOWeek(new Date());
+    document.getElementById('tb-semana').textContent = 'Semana ' + week;
+
+    // Construir slides
+    _slides = (_config.slides && _config.slides.length)
+      ? _config.slides
+      : [
+          {tipo:'productividad', duracion: _config.duracionDefault || 15},
+          {tipo:'volumen',       duracion: _config.duracionDefault || 15},
+          {tipo:'seguimiento',   duracion: _config.duracionDefault || 15}
+        ];
+
+    buildDots();
+    _loaded = true;
+    document.getElementById('loading-screen').style.display = 'none';
+  }
+
+  // Actualizar datos
+  _data = {
+    productividad: raw.productividad || [],
+    volumen:       raw.volumen       || [],
+    volumen_meta:  raw.volumen_meta  || {},
+    seguimiento:   raw.seguimiento   || []
+  };
+
+  // Renderizar el slide actual (por si los datos cambiaron)
+  renderCurrentSlide();
+}
+
+// ── CARRUSEL ─────────────────────────────────────────────────
+function buildDots(){
+  const wrap = document.getElementById('slide-dots');
+  wrap.innerHTML = _slides.map((_,i) => `<div class="dot" id="dot-${i}"></div>`).join('');
+}
+
+function goToSlide(idx){
+  // Ocultar todos
+  document.querySelectorAll('.slide').forEach(s => s.classList.remove('active'));
+  // Limpiar timer anterior
+  if (_timer) { clearInterval(_timer); _timer = null; }
+  if (_progress) { clearInterval(_progress); _progress = null; }
+  document.querySelectorAll('.dot').forEach(d => d.classList.remove('active'));
+
+  _current = ((idx % _slides.length) + _slides.length) % _slides.length;
+  const slide = _slides[_current];
+  const dot = document.getElementById('dot-'+_current);
+  if (dot) dot.classList.add('active');
+
+  // Renderizar contenido
+  renderCurrentSlide();
+
+  // Mostrar slide
+  const slideEl = getSlideEl(slide.tipo);
+  if (slideEl) slideEl.classList.add('active');
+
+  // Progress bar
+  const dur = (slide.duracion || _config.duracionDefault || 15) * 1000;
+  startProgressBar(dur, slide);
+
+  // Auto-avance
+  _timer = setTimeout(() => goToSlide(_current + 1), dur);
+}
+
+function getSlideEl(tipo){
+  if (tipo === 'video') return document.getElementById('slide-video');
+  return document.getElementById('slide-' + tipo);
+}
+
+function startProgressBar(durMs, slide){
+  const inner = document.getElementById('progress-bar-inner');
+  const label = document.getElementById('progress-label');
+  inner.style.transition = 'none';
+  inner.style.width = '0%';
+
+  const start = Date.now();
+  const end   = start + durMs;
+
+  _progress = setInterval(() => {
+    const elapsed = Date.now() - start;
+    const pct = Math.min(100, elapsed / durMs * 100);
+    inner.style.transition = 'none';
+    inner.style.width = pct + '%';
+    const rem = Math.max(0, Math.ceil((end - Date.now()) / 1000));
+    label.textContent = rem + 's';
+    if (pct >= 100) { clearInterval(_progress); _progress = null; }
+  }, 250);
+}
+
+// ── RENDER SLIDES ────────────────────────────────────────────
+function renderCurrentSlide(){
+  const slide = _slides[_current];
+  if (!slide) return;
+  if (slide.tipo === 'productividad') renderProductividad();
+  else if (slide.tipo === 'volumen')  renderVolumen();
+  else if (slide.tipo === 'seguimiento') renderSeguimiento();
+  else if (slide.tipo === 'video')    renderVideo(slide.videoUrl);
+}
+
+// ── SLIDE 1: PRODUCTIVIDAD ───────────────────────────────────
+function renderProductividad(){
+  const rows = _data.productividad || [];
+  const el   = document.getElementById('prod-content');
+
+  if (!rows.length) {
+    el.innerHTML = '<div class="no-data">Sin datos de productividad para hoy</div>';
+    return;
+  }
+
+  // Agrupar por turno
+  const byTurno = {};
+  rows.forEach(r => {
+    const t = r.turno || 'Sin turno';
+    if (!byTurno[t]) byTurno[t] = [];
+    byTurno[t].push(r);
+  });
+
+  // Si 1 turno: mostrar grandes KPIs + tabla de líneas
+  const turnos = Object.keys(byTurno);
+
+  if (turnos.length === 1 || rows.length <= 3) {
+    // Vista de KPIs grandes
+    const totKg   = rows.reduce((s,r) => s + (r.kilos_procesados||0), 0);
+    const totKgEx = rows.reduce((s,r) => s + (r.kilos_exportables||0), 0);
+    const avgTnh  = rows.length ? rows.reduce((s,r)=>s+(r.tnh_real||0),0)/rows.length : 0;
+    const avgRdt  = totKg > 0 ? totKgEx/totKg*100 : 0;
+    const totPers = rows.reduce((s,r)=>s+(r.total_personas||0),0);
+
+    el.innerHTML = `
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:12px">
+        <div class="kpi-card" style="border-left:4px solid #1a73e8">
+          <div class="kpi-label">Kg Procesados</div>
+          <div class="kpi-val big">${fmtInt(totKg)}</div>
+          <div class="kpi-sub">kg materia prima</div>
+        </div>
+        <div class="kpi-card" style="border-left:4px solid #4caf50">
+          <div class="kpi-label">Kg Exportables</div>
+          <div class="kpi-val big" style="color:#4caf50">${fmtInt(totKgEx)}</div>
+          <div class="kpi-sub">producto terminado</div>
+        </div>
+        <div class="kpi-card" style="border-left:4px solid #ff9800">
+          <div class="kpi-label">Rendimiento</div>
+          <div class="kpi-val big" style="color:${avgRdt>=75?'#4caf50':avgRdt>=60?'#ff9800':'#ef5350'}">${fmt(avgRdt)}%</div>
+          <div class="kpi-sub">exportable / procesado</div>
+        </div>
+        <div class="kpi-card" style="border-left:4px solid #7c4dff">
+          <div class="kpi-label">Tn/h Real</div>
+          <div class="kpi-val big" style="color:#c792ea">${fmt(avgTnh)}</div>
+          <div class="kpi-sub">${totPers} personas</div>
+        </div>
+      </div>
+      ${rows.length > 1 ? renderProdTable(rows) : ''}
+    `;
+  } else {
+    // Varios turnos: tabla resumen por turno
+    el.innerHTML = renderProdTable(rows);
+  }
+}
+
+function renderProdTable(rows){
+  if (!rows.length) return '';
+  return `
+    <div style="flex:1;overflow:hidden">
+      <table class="slide-table">
+        <thead><tr>
+          <th>Línea</th><th>Turno</th><th>Cultivo</th><th>Proceso</th>
+          <th>Kg MP</th><th>Kg Export.</th><th>Rendimiento</th>
+          <th>Tn/h Real</th><th>Tn/h Efec.</th><th>Personas</th><th>Status</th>
+        </tr></thead>
+        <tbody>
+          ${rows.map(r => {
+            const rdt = r.rendimiento||0;
+            const rdtColor = rdt>=75?'kpi-good':rdt>=60?'kpi-warn':'kpi-bad';
+            const statusBadge = statusToBadge(r.status);
+            return `<tr>
+              <td><b>${r.linea||'—'}</b></td>
+              <td>${r.turno||'—'}</td>
+              <td>${r.cultivo||'—'}</td>
+              <td>${r.proceso||'—'}</td>
+              <td>${fmtInt(r.kilos_procesados)}</td>
+              <td style="color:#4caf50;font-weight:700">${fmtInt(r.kilos_exportables)}</td>
+              <td class="${rdtColor}" style="font-weight:700">${fmt(rdt)}%</td>
+              <td>${fmt(r.tnh_real)}</td>
+              <td>${fmt(r.tnh_efectiva)}</td>
+              <td>${fmtInt(r.total_personas)}</td>
+              <td>${statusBadge}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+// ── SLIDE 2: VOLUMEN VS OBJETIVO ─────────────────────────────
+function renderVolumen(){
+  const rows = _data.volumen || [];
+  const meta = _data.volumen_meta || {};
+  const el   = document.getElementById('vol-content');
+
+  if (!rows.length) {
+    el.innerHTML = '<div class="no-data">Sin datos de volumen para esta semana</div>';
+    return;
+  }
+
+  // Separar por subtipo
+  const get = (tipo, subtipo) => {
+    const r = rows.find(x => x.tipo === tipo && x.subtipo === subtipo);
+    return r ? (r.kilos || 0) : 0;
+  };
+
+  const mpEjec   = get('Ejecutado','MP');
+  const mpBudget = get('Budget','MP');
+  const ptEjec   = get('Ejecutado','PT');
+  const ptBudget = get('Budget','PT');
+
+  const mpPct = mpBudget > 0 ? mpEjec/mpBudget*100 : null;
+  const ptPct = ptBudget > 0 ? ptEjec/ptBudget*100 : null;
+
+  const maxVal = Math.max(mpEjec, mpBudget, ptEjec, ptBudget, 1);
+  const barH   = (val) => Math.max(4, Math.round(val/maxVal*200));
+
+  el.innerHTML = `
+    <div style="flex:1;display:flex;flex-direction:column;gap:12px">
+
+      <!-- KPI resumen semana -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
+        <div class="kpi-card" style="border-left:4px solid #1a73e8">
+          <div class="kpi-label">MP Procesada</div>
+          <div class="kpi-val">${fmtInt(mpEjec)} <span style="font-size:14px">kg</span></div>
+          <div class="kpi-sub">Objetivo: ${fmtInt(mpBudget)} kg</div>
+        </div>
+        <div class="kpi-card" style="border-left:4px solid ${mpPct==null?'#1a3a5c':mpPct>=100?'#4caf50':mpPct>=80?'#ff9800':'#ef5350'}">
+          <div class="kpi-label">Avance MP</div>
+          <div class="kpi-val" style="color:${mpPct==null?'#aaa':mpPct>=100?'#4caf50':mpPct>=80?'#ff9800':'#ef5350'}">${mpPct!=null?fmt(mpPct)+'%':'—'}</div>
+          <div class="kpi-sub">vs objetivo semana</div>
+        </div>
+        <div class="kpi-card" style="border-left:4px solid #4caf50">
+          <div class="kpi-label">PT Exportable</div>
+          <div class="kpi-val" style="color:#4caf50">${fmtInt(ptEjec)} <span style="font-size:14px">kg</span></div>
+          <div class="kpi-sub">Objetivo: ${fmtInt(ptBudget)} kg</div>
+        </div>
+        <div class="kpi-card" style="border-left:4px solid ${ptPct==null?'#1a3a5c':ptPct>=100?'#4caf50':ptPct>=80?'#ff9800':'#ef5350'}">
+          <div class="kpi-label">Avance PT</div>
+          <div class="kpi-val" style="color:${ptPct==null?'#aaa':ptPct>=100?'#4caf50':ptPct>=80?'#ff9800':'#ef5350'}">${ptPct!=null?fmt(ptPct)+'%':'—'}</div>
+          <div class="kpi-sub">vs objetivo semana</div>
+        </div>
+      </div>
+
+      <!-- Gráfico de barras -->
+      <div style="flex:1;display:flex;gap:30px;align-items:flex-end;padding:0 40px 8px">
+
+        <!-- MP -->
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center">
+          <div style="font-size:12px;color:#7ab4f5;font-weight:700;margin-bottom:12px;text-transform:uppercase;letter-spacing:.5px">Materia Prima (MP)</div>
+          <div style="display:flex;align-items:flex-end;gap:16px;flex:1;width:100%;justify-content:center">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+              <div style="font-size:12px;font-weight:700;color:#fff">${fmtInt(mpBudget)}</div>
+              <div style="width:64px;height:${barH(mpBudget)}px;background:#1a3a5c;border-radius:6px 6px 0 0;border:1px solid #2a5a8c"></div>
+              <div style="font-size:10px;color:#7ab4f5">Objetivo</div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+              <div style="font-size:12px;font-weight:700;color:#1a73e8">${fmtInt(mpEjec)}</div>
+              <div style="width:64px;height:${barH(mpEjec)}px;background:${mpPct!=null&&mpPct>=100?'#1b5e20':mpPct!=null&&mpPct>=80?'#e65100':'#1a73e8'};border-radius:6px 6px 0 0"></div>
+              <div style="font-size:10px;color:#7ab4f5">Ejecutado</div>
+            </div>
+          </div>
+          <div style="width:100%;height:1px;background:#1a3a5c;margin-top:4px"></div>
+        </div>
+
+        <!-- PT -->
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center">
+          <div style="font-size:12px;color:#7ab4f5;font-weight:700;margin-bottom:12px;text-transform:uppercase;letter-spacing:.5px">Producto Terminado (PT)</div>
+          <div style="display:flex;align-items:flex-end;gap:16px;flex:1;width:100%;justify-content:center">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+              <div style="font-size:12px;font-weight:700;color:#fff">${fmtInt(ptBudget)}</div>
+              <div style="width:64px;height:${barH(ptBudget)}px;background:#1a3a5c;border-radius:6px 6px 0 0;border:1px solid #2a5a8c"></div>
+              <div style="font-size:10px;color:#7ab4f5">Objetivo</div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+              <div style="font-size:12px;font-weight:700;color:#4caf50">${fmtInt(ptEjec)}</div>
+              <div style="width:64px;height:${barH(ptEjec)}px;background:${ptPct!=null&&ptPct>=100?'#1b5e20':ptPct!=null&&ptPct>=80?'#388e3c':'#4caf50'};border-radius:6px 6px 0 0"></div>
+              <div style="font-size:10px;color:#7ab4f5">Ejecutado</div>
+            </div>
+          </div>
+          <div style="width:100%;height:1px;background:#1a3a5c;margin-top:4px"></div>
+        </div>
+
+      </div>
+    </div>
+  `;
+}
+
+// ── SLIDE 3: SEGUIMIENTO ─────────────────────────────────────
+function renderSeguimiento(){
+  const rows = _data.seguimiento || [];
+  const tbody = document.getElementById('seg-tbody');
+
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#3a5a7a;padding:32px">Sin procesos activos hoy</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = rows.map(r => {
+    const tdnhColor = r.tn_hora_real > 0 && r.tn_hora_proyect > 0
+      ? (r.tn_hora_real >= r.tn_hora_proyect ? 'color:#4caf50' : 'color:#ff9800')
+      : '';
+    const badge = statusToBadge(r.status);
+    return `<tr>
+      <td><b>${r.linea||'—'}</b></td>
+      <td>${r.turno||'—'}</td>
+      <td>${r.cultivo||'—'}</td>
+      <td>${r.proceso||'—'}</td>
+      <td style="font-family:monospace;font-size:12px">${r.lote||'—'}</td>
+      <td>${fmtInt(r.kg_recibidos)}</td>
+      <td>${fmt(r.tn_hora_proyect)}</td>
+      <td style="${tdnhColor};font-weight:700">${fmt(r.tn_hora_real)}</td>
+      <td>${fmtHora(r.hora_inicio)}</td>
+      <td>${badge}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── SLIDE 4: VIDEO ────────────────────────────────────────────
+function renderVideo(url){
+  const vid = document.getElementById('kiosk-video');
+  if (!vid || !url) return;
+  if (vid.src !== url) {
+    vid.src = url;
+    vid.load();
+  }
+  vid.play().catch(()=>{});
+}
+
+// ── HELPERS ──────────────────────────────────────────────────
+function statusToBadge(status){
+  const s = String(status||'').toLowerCase();
+  if (s.includes('proceso') || s.includes('progreso') || s.includes('activo'))
+    return '<span class="badge badge-green">En Proceso</span>';
+  if (s.includes('pend'))
+    return '<span class="badge badge-orange">Pendiente</span>';
+  if (s.includes('complet') || s.includes('termin') || s.includes('finaliz'))
+    return '<span class="badge badge-blue">Completado</span>';
+  return `<span class="badge badge-gray">${status||'—'}</span>`;
+}
+
+// ── ARRANQUE ─────────────────────────────────────────────────
+async function init(){
+  await loadAndRefresh();
+
+  // Si no hay slides, mostrar mensaje
+  if (!_slides.length) {
+    document.getElementById('loading-screen').style.display = 'none';
+    return;
+  }
+
+  // Iniciar carrusel
+  goToSlide(0);
+
+  // Refresh periódico de datos
+  const refreshMs = (_config.refreshInterval || 60) * 1000;
+  setInterval(async () => {
+    await loadAndRefresh();
+  }, refreshMs);
+}
+
+init();
+</script>
+</body>
+</html>
